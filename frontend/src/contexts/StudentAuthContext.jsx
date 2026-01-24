@@ -123,11 +123,9 @@ export const StudentAuthProvider = ({ children }) => {
   };
 
   /**
-   * Check if student is authenticated
+   * Check if student is authenticated (computed on each render)
    */
-  const isAuthenticated = () => {
-    return !!student && !!getStudentToken();
-  };
+  const isAuthenticated = !!student && !!getStudentToken();
 
   /**
    * Refresh student data from storage
@@ -143,7 +141,7 @@ export const StudentAuthProvider = ({ children }) => {
     // State
     student,
     loading,
-    isAuthenticated: isAuthenticated(),
+    isAuthenticated,
     
     // Methods
     login,

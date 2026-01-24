@@ -1,4 +1,6 @@
-/* Dashboard Layout Styles */
+/* ================================================
+   DASHBOARD LAYOUT STYLES - DARK MODE READY
+   ================================================ */
 
 /* Layout Container */
 .dashboard-layout {
@@ -6,17 +8,20 @@
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-primary);
 }
 
-/* Header */
+/* ================================================
+   HEADER
+   ================================================ */
 .dashboard-header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: white;
-    border-bottom: 1px solid var(--neutral-200);
-    box-shadow: var(--shadow-sm);
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .dashboard-header-container {
@@ -41,6 +46,9 @@
     transform: scale(1.05);
 }
 
+/* ================================================
+   TOGGLE BUTTONS
+   ================================================ */
 /* Mobile Toggle */
 .dashboard-mobile-toggle {
     display: none;
@@ -51,16 +59,18 @@
     color: var(--text-primary);
     cursor: pointer;
     padding: 0.5rem;
-    transition: color var(--transition-fast);
+    transition: all var(--transition-fast);
     position: relative;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     gap: 6px;
+    border-radius: var(--radius-md);
 }
 
 .dashboard-mobile-toggle:hover {
     color: var(--primary-purple);
+    background: var(--bg-secondary);
 }
 
 /* Desktop Collapse Toggle */
@@ -83,7 +93,7 @@
 
 .dashboard-collapse-toggle:hover {
     color: var(--primary-purple);
-    background: var(--neutral-50);
+    background: var(--bg-secondary);
 }
 
 /* Hamburger Lines */
@@ -113,7 +123,9 @@
     transform: translateY(-8px) rotate(-45deg);
 }
 
-/* User Info */
+/* ================================================
+   USER INFO & AVATAR
+   ================================================ */
 .dashboard-user-info {
     display: flex;
     align-items: center;
@@ -139,76 +151,73 @@
     font-size: 1.25rem;
     cursor: pointer;
     transition: transform var(--transition-fast);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 .dashboard-user-avatar:hover {
     transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
-/* Main Layout */
+/* ================================================
+   MAIN LAYOUT & SIDEBAR
+   ================================================ */
 .dashboard-main {
     display: flex;
     flex: 1;
     position: relative;
-    overflow: hidden;
-    height: calc(100vh - 4rem);
+    min-height: calc(100vh - 4rem);
 }
 
 /* Sidebar */
 .dashboard-sidebar {
     width: 260px;
-    background: white;
-    border-right: 1px solid var(--neutral-200);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    position: fixed;
+    position: sticky;
     left: 0;
     top: 4rem;
-    bottom: 0;
+    height: calc(100vh - 4rem);
     overflow-y: auto;
     overflow-x: hidden;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 50;
+    align-self: flex-start;
 }
 
 .dashboard-sidebar--collapsed {
     width: 70px;
 }
 
-/* Sidebar Logo */
-.dashboard-sidebar-logo {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--neutral-200);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--primary-purple);
-    min-height: 60px;
-}
-
-.dashboard-sidebar-logo-icon {
-    font-size: 1.5rem;
-    min-width: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dashboard-sidebar-logo-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 .dashboard-nav {
     flex: 1;
-    padding: var(--spacing-lg) 0;
+    padding: var(--spacing-md) 0;
     overflow-y: auto;
 }
 
-/* Navigation Items */
+/* Custom Scrollbar for Sidebar */
+.dashboard-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ================================================
+   NAVIGATION ITEMS
+   ================================================ */
 .dashboard-nav-item {
     display: flex;
     align-items: center;
@@ -225,12 +234,13 @@
 }
 
 .dashboard-nav-item:hover {
-    background: var(--neutral-50);
-    color: var(--primary-purple);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transform: translateX(2px);
 }
 
 .dashboard-nav-item--active {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.15));
     color: var(--primary-purple);
     font-weight: 600;
 }
@@ -252,16 +262,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform var(--transition-fast);
+}
+
+.dashboard-nav-item:hover .dashboard-nav-icon {
+    transform: scale(1.1);
 }
 
 .dashboard-nav-label {
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Sidebar Footer */
+/* ================================================
+   SIDEBAR FOOTER & LOGOUT
+   ================================================ */
 .dashboard-sidebar-footer {
     padding: var(--spacing-md);
-    border-top: 1px solid var(--neutral-200);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
 }
 
 .dashboard-logout-btn {
@@ -278,45 +299,72 @@
 }
 
 .dashboard-logout-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--error-light);
+    transform: translateX(2px);
 }
 
-/* Content Area */
+.dashboard-logout-btn .dashboard-nav-icon {
+    transition: transform var(--transition-fast);
+}
+
+.dashboard-logout-btn:hover .dashboard-nav-icon {
+    transform: scale(1.1) rotate(-10deg);
+}
+
+/* ================================================
+   CONTENT AREA
+   ================================================ */
 .dashboard-content {
     flex: 1;
-    margin-left: 260px;
-    overflow-y: auto;
     overflow-x: hidden;
-    height: 100%;
+    min-height: calc(100vh - 4rem);
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    background: var(--bg-primary);
 }
 
-.dashboard-content > *:not(footer) {
+.dashboard-content>*:not(footer) {
     flex: 0 0 auto;
 }
 
-.dashboard-content > footer {
+.dashboard-content>footer {
     margin-top: auto;
 }
 
-.dashboard-sidebar--collapsed + .dashboard-overlay + .dashboard-content,
-.dashboard-sidebar--collapsed ~ .dashboard-content {
-    margin-left: 70px;
+/* Custom Scrollbar for Content */
+.dashboard-content::-webkit-scrollbar {
+    width: 8px;
 }
 
-/* Mobile Overlay */
+.dashboard-content::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.dashboard-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ================================================
+   MOBILE OVERLAY
+   ================================================ */
 .dashboard-overlay {
     display: none;
 }
 
-/* Responsive Design */
+/* ================================================
+   RESPONSIVE DESIGN
+   ================================================ */
 @media (min-width: 769px) {
     .dashboard-academy-name {
         display: block;
     }
-    
+
     .dashboard-mobile-toggle {
         display: none !important;
     }
@@ -326,9 +374,9 @@
     .dashboard-collapse-toggle {
         display: none;
     }
-    
+
     .dashboard-mobile-toggle {
-        display: block;
+        display: flex;
     }
 
     .dashboard-sidebar {
@@ -339,7 +387,7 @@
         width: 260px !important;
         z-index: 200;
         transform: translateX(-100%);
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     }
 
     .dashboard-sidebar--open {
@@ -353,12 +401,27 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.6);
         z-index: 150;
+        backdrop-filter: blur(2px);
     }
 
     .dashboard-content {
         width: 100%;
-        margin-left: 0 !important;
     }
+}
+
+/* ================================================
+   DARK MODE SPECIFIC ENHANCEMENTS
+   ================================================ */
+.dark .dashboard-sidebar {
+    box-shadow: 1px 0 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark .dashboard-nav-item:hover {
+    background: var(--bg-secondary);
+}
+
+.dark .dashboard-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
 }

@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import ThemeToggle from '../../components/ThemeToggle/ThemeToggle';
+import {
+    LayoutDashboard,
+    Users,
+    FileText,
+    ChartNoAxesCombined,
+    Settings,
+    LogOut,
+    GraduationCap,
+    UserRound,
+    Logs
+} from 'lucide-react';
 import './DashboardLayout.css';
 
 const DashboardLayout = ({ children }) => {
@@ -38,27 +50,27 @@ const DashboardLayout = ({ children }) => {
     const navItems = [
         {
             path: `/${academySlug}/dashboard`,
-            icon: '🏠',
+            icon: LayoutDashboard,
             label: 'Dashboard',
         },
         {
             path: `/${academySlug}/students`,
-            icon: '👥',
+            icon: Users,
             label: 'Students',
         },
         {
             path: `/${academySlug}/exams`,
-            icon: '📝',
+            icon: FileText,
             label: 'Exams',
         },
         {
             path: `/${academySlug}/results`,
-            icon: '📊',
+            icon: ChartNoAxesCombined,
             label: 'Results',
         },
         {
             path: `/${academySlug}/settings`,
-            icon: '⚙️',
+            icon: Settings,
             label: 'Settings',
         },
     ];
@@ -70,7 +82,7 @@ const DashboardLayout = ({ children }) => {
                 <div className="dashboard-header-container">
                     {/* Desktop Collapse Toggle */}
                     <button
-                        className={`dashboard-collapse-toggle ${isCollapsed ? 'active' : ''}`}
+                        className={`dashboard-collapse-toggle ${!isCollapsed ? 'active' : ''}`}
                         onClick={toggleCollapse}
                         aria-label="Toggle sidebar"
                     >
@@ -81,7 +93,7 @@ const DashboardLayout = ({ children }) => {
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className={`dashboard-mobile-toggle ${isSidebarOpen ? 'active' : ''}`}
+                        className={`dashboard-mobile-toggle ${!isSidebarOpen ? 'active' : ''}`}
                         onClick={toggleSidebar}
                         aria-label="Toggle sidebar"
                     >
@@ -92,14 +104,16 @@ const DashboardLayout = ({ children }) => {
 
                     {/* Logo */}
                     <Link to="/" className="dashboard-logo">
-                        📚 EduMaths
+                        <GraduationCap size={24} strokeWidth={2} className="inline-block mr-2" />
+                        EduMaths
                     </Link>
 
                     {/* User Info */}
                     <div className="dashboard-user-info">
                         <span className="dashboard-academy-name">{academySlug}</span>
+                        <ThemeToggle />
                         <div className="dashboard-user-avatar">
-                            👤
+                            <UserRound size={20} strokeWidth={2} />
                         </div>
                     </div>
                 </div>
@@ -108,34 +122,40 @@ const DashboardLayout = ({ children }) => {
             <div className="dashboard-main">
                 {/* Sidebar */}
                 <aside className={`dashboard-sidebar ${isSidebarOpen ? 'dashboard-sidebar--open' : ''} ${isCollapsed ? 'dashboard-sidebar--collapsed' : ''}`}>
-                    {/* Sidebar Logo */}
-                    <div className="dashboard-sidebar-logo">
-                        <span className="dashboard-sidebar-logo-icon">📚</span>
-                        {!isCollapsed && <span className="dashboard-sidebar-logo-text">EduMaths</span>}
-                    </div>
 
                     <nav className="dashboard-nav">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`dashboard-nav-item ${isActive(item.path) ? 'dashboard-nav-item--active' : ''}`}
-                                onClick={() => setIsSidebarOpen(false)}
-                                title={isCollapsed ? item.label : ''}
-                            >
-                                <span className="dashboard-nav-icon">{item.icon}</span>
-                                {!isCollapsed && <span className="dashboard-nav-label">{item.label}</span>}
-                            </Link>
-                        ))}
+                        {navItems.map((item) => {
+                            const IconComponent = item.icon;
+                            const isItemActive = isActive(item.path);
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`dashboard-nav-item ${isItemActive ? 'dashboard-nav-item--active' : ''}`}
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    title={isCollapsed ? item.label : ''}
+                                >
+                                    <span className="dashboard-nav-icon">
+                                        <IconComponent
+                                            size={20}
+                                            strokeWidth={2}
+                                        />
+                                    </span>
+                                    {!isCollapsed && <span className="dashboard-nav-label">{item.label}</span>}
+                                </Link>
+                            );
+                        })}
                     </nav>
 
                     {/* Logout */}
                     <div className="dashboard-sidebar-footer">
-                        <button 
-                            onClick={handleLogout} 
+                        <button
+                            onClick={handleLogout}
                             className="dashboard-logout-btn"
                             title={isCollapsed ? 'Logout' : ''}
-                            style={{ 
+                            aria-label="Logout"
+                            style={{
                                 background: 'none',
                                 border: 'none',
                                 width: '100%',
@@ -144,7 +164,9 @@ const DashboardLayout = ({ children }) => {
                                 padding: 0,
                             }}
                         >
-                            <span className="dashboard-nav-icon">🚪</span>
+                            <span className="dashboard-nav-icon">
+                                <LogOut size={20} strokeWidth={2} />
+                            </span>
                             {!isCollapsed && <span className="dashboard-nav-label">Logout</span>}
                         </button>
                     </div>

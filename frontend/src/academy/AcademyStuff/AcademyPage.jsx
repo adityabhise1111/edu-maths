@@ -4,6 +4,8 @@ import { useStudentAuth } from "../../contexts/StudentAuthContext";
 import { academyAPI, examAPI } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorAlert from "../../components/ErrorAlert";
+import { LogOut, AlertTriangle, Clipboard, History, FileText } from 'lucide-react';
+import ThemeToggle from "../../components/ThemeToggle/ThemeToggle";
 
 const AcademyPage = () => {
   const { academySlug } = useParams();
@@ -15,7 +17,7 @@ const AcademyPage = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -27,7 +29,7 @@ const AcademyPage = () => {
       try {
         setLoading(true);
         setError("");
-        
+
         // Fetch academy details
         const academyResponse = await academyAPI.getBySlug(academySlug);
         if (academyResponse.academy) {
@@ -36,9 +38,9 @@ const AcademyPage = () => {
 
         // Fetch exams for this academy with pagination
         const examsResponse = await examAPI.getByAcademy(academySlug, { page: 1, limit: 10 });
-        
+
         setExams(examsResponse.exams || []);
-        
+
         // Set pagination metadata
         if (examsResponse.pagination) {
           setCurrentPage(examsResponse.pagination.currentPage);
@@ -54,18 +56,18 @@ const AcademyPage = () => {
 
     fetchData();
   }, [academySlug]);
-  
+
   // Load more exams
   const loadMoreExams = async () => {
     if (currentPage >= totalPages) return;
-    
+
     try {
       setLoadingMore(true);
       const nextPage = currentPage + 1;
       const examsResponse = await examAPI.getByAcademy(academySlug, { page: nextPage, limit: 10 });
-      
+
       setExams(prev => [...prev, ...(examsResponse.exams || [])]);
-      
+
       if (examsResponse.pagination) {
         setCurrentPage(examsResponse.pagination.currentPage);
         setTotalPages(examsResponse.pagination.totalPages);
@@ -119,35 +121,44 @@ const AcademyPage = () => {
         textAlign: 'center',
         position: 'relative',
       }}>
-        {/* Student Logout Button */}
-        {isAuthenticated && student && (
-          <button
-            onClick={handleLogout}
-            style={{
-              position: 'absolute',
-              top: 'var(--spacing-md)',
-              right: 'var(--spacing-md)',
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: 'none',
-              color: 'white',
-              padding: '0.5rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
-            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
-          >
-            🚪 Logout
-          </button>
-        )}
-        
+        {/* Theme Toggle and Student Logout Button */}
+        <div style={{
+          position: 'absolute',
+          top: 'var(--spacing-md)',
+          right: 'var(--spacing-md)',
+          display: 'flex',
+          gap: 'var(--spacing-sm)',
+          alignItems: 'center'
+        }}>
+          <ThemeToggle />
+
+          {isAuthenticated && student && (
+            <button
+              onClick={handleLogout}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+              onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+            >
+              <LogOut size={18} strokeWidth={2} className="inline-block mr-2" />
+              Logout
+            </button>
+          )}
+        </div>
+
         <div className="container container--md">
           {academy?.logoUrl && (
-            <img 
-              src={academy.logoUrl} 
+            <img
+              src={academy.logoUrl}
               alt={academy.name}
               style={{
                 maxWidth: '100px',
@@ -170,14 +181,14 @@ const AcademyPage = () => {
           <p style={{ fontSize: '1.125rem', opacity: '0.9', maxWidth: '600px', margin: '0 auto' }}>
             {academy?.description || 'Welcome to our learning platform. Access your exams and track your progress.'}
           </p>
-          
+
           {/* Show login button or welcome message */}
           {!isAuthenticated ? (
             <button
               onClick={() => navigate(`/${academySlug}/login`)}
               className="btn btn-secondary"
-              style={{ 
-                backgroundColor: 'white', 
+              style={{
+                backgroundColor: 'white',
                 color: 'var(--primary-purple)',
                 marginTop: 'var(--spacing-lg)',
               }}
@@ -185,7 +196,7 @@ const AcademyPage = () => {
               Student Login
             </button>
           ) : (
-            <p style={{ 
+            <p style={{
               marginTop: 'var(--spacing-lg)',
               fontSize: '1rem',
               opacity: '0.9',
@@ -255,7 +266,10 @@ const AcademyPage = () => {
               border: '1px solid #fcc',
               color: '#c33'
             }}>
-              <p>⚠️ {error}</p>
+              <p>
+                <AlertTriangle size={16} strokeWidth={2} className="inline-block mr-2" />
+                {error}
+              </p>
             </div>
           )}
 
@@ -263,7 +277,8 @@ const AcademyPage = () => {
           {!loading && !error && exams.length === 0 && (
             <div className="card text-center">
               <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
-                📝 No exams available yet. Check back later!
+                <Clipboard size={20} strokeWidth={2} className="inline-block mr-2" />
+                No exams available yet. Check back later!
               </p>
             </div>
           )}
@@ -342,8 +357,14 @@ const AcademyPage = () => {
                       color: 'var(--text-muted)',
                       marginBottom: 'var(--spacing-md)'
                     }}>
-                      <span>⏱️ {exam.durationMinutes} mins</span>
-                      <span>📝 {exam.totalQuestions} questions</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <History size={16} strokeWidth={2} />
+                        {exam.durationMinutes} mins
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <FileText size={16} strokeWidth={2} />
+                        {exam.totalQuestions} questions
+                      </span>
                     </div>
 
                     <div style={{
@@ -373,7 +394,7 @@ const AcademyPage = () => {
               })}
             </div>
           )}
-          
+
           {/* Load More Button */}
           {!loading && !error && exams.length > 0 && currentPage < totalPages && (
             <div style={{ textAlign: 'center', marginTop: 'var(--spacing-xl)' }}>
@@ -387,11 +408,11 @@ const AcademyPage = () => {
               </button>
             </div>
           )}
-          
+
           {/* Pagination Info */}
           {!loading && !error && exams.length > 0 && (
-            <div style={{ 
-              textAlign: 'center', 
+            <div style={{
+              textAlign: 'center',
               marginTop: 'var(--spacing-md)',
               color: 'var(--text-secondary)',
               fontSize: '0.875rem'

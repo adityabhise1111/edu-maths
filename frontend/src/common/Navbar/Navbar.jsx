@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import ThemeToggle from '../../components/ThemeToggle/ThemeToggle';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -35,6 +36,7 @@ const Navbar = () => {
                     >
                         Teacher Login
                     </Link>
+                    <ThemeToggle />
                     <Link
                         to="/signup"
                         className="btn btn-primary btn-sm"
@@ -70,6 +72,9 @@ const Navbar = () => {
                     >
                         Teacher Login
                     </Link>
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--spacing-md) 0' }}>
+                        <ThemeToggle />
+                    </div>
                     <Link
                         to="/signup"
                         className="btn btn-primary btn-full"

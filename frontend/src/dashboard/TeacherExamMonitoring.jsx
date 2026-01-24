@@ -26,7 +26,7 @@ const TeacherExamMonitoring = () => {
 
                 // Fetch summary first
                 const summaryData = await teacherAPI.getExamSummary(examId);
-                
+
                 // Extract summary stats from the response structure
                 const summaryStats = {
                     totalAttempts: summaryData.summary?.totalStudentsAttempted || 0,
@@ -90,7 +90,7 @@ const TeacherExamMonitoring = () => {
         return (
             <div className="page-container">
                 <div className="container">
-                    <ErrorAlert 
+                    <ErrorAlert
                         message={error}
                         onClose={() => navigate(`/${academySlug}/dashboard`)}
                     />
@@ -109,7 +109,7 @@ const TeacherExamMonitoring = () => {
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
             {/* Header */}
             <div style={{
-                backgroundColor: 'white',
+                backgroundColor: 'var(--bg-card)',
                 borderBottom: '1px solid var(--neutral-200)',
                 padding: 'var(--spacing-xl) 0',
                 marginBottom: 'var(--spacing-xl)'
@@ -297,7 +297,7 @@ const TeacherExamMonitoring = () => {
                                                     transition: 'background-color var(--transition-fast)'
                                                 }}
                                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--neutral-50)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
                                                 <td style={{ padding: 'var(--spacing-md)' }}>
                                                     <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { teacherAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
+import { Users, GraduationCap, Trash2, UserRoundPlus, AlertTriangle, Search, Eye } from 'lucide-react';
 
 const StudentsList = () => {
     const { academySlug } = useParams();
@@ -18,12 +19,12 @@ const StudentsList = () => {
     const [formError, setFormError] = useState('');
     const [formLoading, setFormLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-    
+
     // Delete confirmation modal state
     const [deleteModal, setDeleteModal] = useState({ show: false, student: null });
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState('');
-    
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -47,7 +48,7 @@ const StudentsList = () => {
 
                 const response = await teacherAPI.getAcademyStudents({ page: 1, limit: 10 });
                 setStudents(response.students || []);
-                
+
                 // Set pagination metadata
                 if (response.pagination) {
                     setCurrentPage(response.pagination.currentPage);
@@ -67,14 +68,14 @@ const StudentsList = () => {
     // Load more students
     const loadMoreStudents = async () => {
         if (currentPage >= totalPages) return;
-        
+
         try {
             setLoadingMore(true);
             const nextPage = currentPage + 1;
             const response = await teacherAPI.getAcademyStudents({ page: nextPage, limit: 10 });
-            
+
             setStudents(prev => [...prev, ...(response.students || [])]);
-            
+
             if (response.pagination) {
                 setCurrentPage(response.pagination.currentPage);
                 setTotalPages(response.pagination.totalPages);
@@ -102,7 +103,7 @@ const StudentsList = () => {
     // Handle add student form submission
     const handleAddStudent = async (e) => {
         e.preventDefault();
-        
+
         // Validation
         if (!formData.username.trim()) {
             setFormError('Username is required');
@@ -122,21 +123,21 @@ const StudentsList = () => {
             setFormError('');
 
             await teacherAPI.createStudent(academy.id, formData.username, formData.password);
-            
+
             // Success - refresh students list (reset to page 1)
             const response = await teacherAPI.getAcademyStudents({ page: 1, limit: 10 });
             setStudents(response.students || []);
-            
+
             // Reset pagination
             if (response.pagination) {
                 setCurrentPage(response.pagination.currentPage);
                 setTotalPages(response.pagination.totalPages);
             }
-            
+
             // Show success message
             setSuccessMessage(`Student "${formData.username}" added successfully!`);
             setTimeout(() => setSuccessMessage(''), 3000);
-            
+
             // Reset form and close modal
             setFormData({ username: '', password: '' });
             setShowAddModal(false);
@@ -164,21 +165,21 @@ const StudentsList = () => {
             setDeleteError('');
 
             await teacherAPI.deleteStudent(deleteModal.student.id);
-            
+
             // Success - refresh students list (reset to page 1)
             const response = await teacherAPI.getAcademyStudents({ page: 1, limit: 10 });
             setStudents(response.students || []);
-            
+
             // Reset pagination
             if (response.pagination) {
                 setCurrentPage(response.pagination.currentPage);
                 setTotalPages(response.pagination.totalPages);
             }
-            
+
             // Show success message
             setSuccessMessage(`Student "${deleteModal.student.username}" deleted successfully!`);
             setTimeout(() => setSuccessMessage(''), 3000);
-            
+
             // Close modal
             setDeleteModal({ show: false, student: null });
         } catch (err) {
@@ -212,8 +213,8 @@ const StudentsList = () => {
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
             {/* Header */}
             <div style={{
-                backgroundColor: 'white',
-                borderBottom: '1px solid var(--neutral-200)',
+                backgroundColor: 'var(--bg-card)',
+                borderBottom: '1px solid var(--border-color)',
                 padding: 'var(--spacing-xl) 0',
                 marginBottom: 'var(--spacing-xl)'
             }}>
@@ -248,7 +249,7 @@ const StudentsList = () => {
                                 color: 'white',
                                 fontSize: '1.5rem'
                             }}>
-                                👥
+                                <Users size={24} strokeWidth={2} color="white" />
                             </div>
                             <div>
                                 <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
@@ -300,7 +301,9 @@ const StudentsList = () => {
                 {/* Students List */}
                 {students.length === 0 ? (
                     <div className="card text-center" style={{ padding: 'var(--spacing-3xl)' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>📚</div>
+                        <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', color: 'var(--text-muted)' }}>
+                            <GraduationCap size={64} strokeWidth={1.5} />
+                        </div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: 'var(--spacing-sm)' }}>
                             No Students Yet
                         </h2>
@@ -459,7 +462,8 @@ const StudentsList = () => {
                                                     }}
                                                     title="Delete student"
                                                 >
-                                                    🗑️ Delete
+                                                    <Trash2 size={16} strokeWidth={2} />
+                                                    Delete
                                                 </button>
                                             </td>
                                         </tr>
@@ -467,10 +471,10 @@ const StudentsList = () => {
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         {/* Load More Button */}
                         {students.length > 0 && currentPage < totalPages && (
-                            <div style={{ 
+                            <div style={{
                                 padding: 'var(--spacing-xl)',
                                 textAlign: 'center',
                                 borderTop: '1px solid var(--neutral-200)'
@@ -507,7 +511,7 @@ const StudentsList = () => {
                                 </button>
                             </div>
                         )}
-                        
+
                         {/* Pagination Info */}
                         {students.length > 0 && (
                             <div style={{
@@ -540,13 +544,13 @@ const StudentsList = () => {
                     padding: 'var(--spacing-md)'
                 }}>
                     <div style={{
-                        backgroundColor: 'white',
+                        backgroundColor: 'var(--bg-card)',
                         borderRadius: 'var(--radius-lg)',
                         maxWidth: '500px',
                         width: '100%',
                         maxHeight: '90vh',
                         overflow: 'auto',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                        boxShadow: 'var(--shadow-xl)'
                     }}>
                         {/* Modal Header */}
                         <div style={{
@@ -708,11 +712,11 @@ const StudentsList = () => {
                     padding: 'var(--spacing-md)'
                 }}>
                     <div style={{
-                        backgroundColor: 'white',
+                        backgroundColor: 'var(--bg-card)',
                         borderRadius: 'var(--radius-lg)',
                         maxWidth: '500px',
                         width: '100%',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                        boxShadow: 'var(--shadow-xl)'
                     }}>
                         {/* Modal Header */}
                         <div style={{

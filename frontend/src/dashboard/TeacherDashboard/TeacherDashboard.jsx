@@ -5,6 +5,8 @@ import { teacherAPI } from '../../services/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import ErrorAlert from '../../components/ErrorAlert';
+import { SkeletonDashboardStats, SkeletonTable } from '../../components/Skeleton';
+import { Users, FileText, ChartNoAxesCombined, Plus, Clipboard } from 'lucide-react';
 
 const TeacherDashboard = () => {
   const { academySlug } = useParams();
@@ -15,7 +17,7 @@ const TeacherDashboard = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Pagination state for exams
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -27,7 +29,7 @@ const TeacherDashboard = () => {
       try {
         setLoading(true);
         setError('');
-        
+
         // Fetch both exams and students in parallel
         const [examsResponse, studentsResponse] = await Promise.all([
           teacherAPI.getAcademyExams({ page: 1, limit: 10 }),
@@ -35,10 +37,10 @@ const TeacherDashboard = () => {
         ]);
 
         //console.log("[Teacher dashboard ] exam response", examsResponse );
-        
+
         setExams(examsResponse.exams || []);
         setStudents(studentsResponse.students || []);
-        
+
         // Set pagination metadata for exams
         if (examsResponse.pagination) {
           setCurrentPage(examsResponse.pagination.currentPage);
@@ -54,34 +56,34 @@ const TeacherDashboard = () => {
 
     fetchDashboardData();
   }, []);
-  
+
   // Load more exams
   const loadMoreExams = async () => {
     if (currentPage >= totalPages) return;
-    
+
     try {
       setLoadingMore(true);
       const nextPage = currentPage + 1;
       console.log('🔄 Requesting page:', nextPage);
       console.log('📊 Current state - Page:', currentPage, 'Total exams:', exams.length);
-      
+
       const examsResponse = await teacherAPI.getAcademyExams({ page: nextPage, limit: 10 });
-      
+
       console.log('📦 Response received:', examsResponse.exams?.length, 'exams');
       console.log('📄 First new exam ID:', examsResponse.exams?.[0]?.examId);
       console.log('📄 Last new exam ID:', examsResponse.exams?.[examsResponse.exams?.length - 1]?.examId);
       console.log('📄 Current first exam ID:', exams[0]?.examId);
       console.log('📄 Current last exam ID:', exams[exams.length - 1]?.examId);
-      
+
       const newExams = examsResponse.exams || [];
       console.log('➕ Appending', newExams.length, 'exams to existing', exams.length, 'exams');
-      
+
       setExams(prev => {
         const combined = [...prev, ...newExams];
         console.log('✅ New total:', combined.length, 'exams');
         return combined;
       });
-      
+
       if (examsResponse.pagination) {
         console.log('📄 Updating pagination - Current:', examsResponse.pagination.currentPage, 'Total:', examsResponse.pagination.totalPages);
         setCurrentPage(examsResponse.pagination.currentPage);
@@ -103,33 +105,95 @@ const TeacherDashboard = () => {
   // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   // Format time
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  // Show loading
+  // Show loading skeleton
   if (loading) {
-    return <LoadingSpinner message="Loading dashboard..." />;
+    return (
+      <>
+        {/* Dashboard Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--primary-purple), var(--accent-pink))',
+          padding: 'var(--spacing-2xl) var(--spacing-md)',
+          color: 'white'
+        }}>
+          <div className="container">
+            <h1 style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              Welcome, {teacher?.firstName || 'Teacher'}! 👋
+            </h1>
+            <p style={{ fontSize: '1.125rem', opacity: '0.9' }}>
+              Managing: <strong>{academy?.name || academySlug}</strong>
+            </p>
+          </div>
+        </div>
+
+        {/* Dashboard Content - Skeleton */}
+        <div className="py-6">
+          <div className="container">
+            {/* Skeleton Stats */}
+            <SkeletonDashboardStats />
+
+            {/* Skeleton Create Button */}
+            <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+              <div style={{
+                width: '200px',
+                height: '44px',
+                background: 'linear-gradient(90deg, var(--neutral-100) 0%, var(--neutral-200) 50%, var(--neutral-100) 100%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeleton-loading 1.5s ease-in-out infinite',
+                borderRadius: 'var(--radius-lg)',
+              }} />
+            </div>
+
+            {/* Skeleton Exams List */}
+            <div className="card animate-fade-in">
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 'var(--spacing-lg)',
+              }}>
+                <div style={{
+                  width: '150px',
+                  height: '1.5rem',
+                  background: 'linear-gradient(90deg, var(--neutral-100) 0%, var(--neutral-200) 50%, var(--neutral-100) 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'skeleton-loading 1.5s ease-in-out infinite',
+                  borderRadius: 'var(--radius-md)',
+                }} />
+              </div>
+              <SkeletonTable rows={5} columns={6} />
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 200px)', backgroundColor: 'var(--bg-secondary)' }}>
+    <>
       {/* Dashboard Header */}
       <div style={{
         background: 'linear-gradient(135deg, var(--primary-purple), var(--accent-pink))',
-        padding: 'var(--spacing-3xl) var(--spacing-md)',
+        padding: 'var(--spacing-2xl) var(--spacing-md)',
         color: 'white'
       }}>
         <div className="container">
@@ -151,8 +215,8 @@ const TeacherDashboard = () => {
         <div className="container">
           {/* Error Message */}
           {error && (
-            <ErrorAlert 
-              message={error} 
+            <ErrorAlert
+              message={error}
               onClose={() => setError('')}
             />
           )}
@@ -177,7 +241,7 @@ const TeacherDashboard = () => {
                   justifyContent: 'center',
                   fontSize: '1.5rem'
                 }}>
-                  👥
+                  <Users size={24} strokeWidth={2} color="white" />
                 </div>
                 <div>
                   <h3 style={{
@@ -220,7 +284,7 @@ const TeacherDashboard = () => {
                   justifyContent: 'center',
                   fontSize: '1.5rem'
                 }}>
-                  📝
+                  <FileText size={24} strokeWidth={2} color="white" />
                 </div>
                 <div>
                   <h3 style={{
@@ -263,7 +327,7 @@ const TeacherDashboard = () => {
                   justifyContent: 'center',
                   fontSize: '1.5rem'
                 }}>
-                  📊
+                  <ChartNoAxesCombined size={24} strokeWidth={2} color="white" />
                 </div>
                 <div>
                   <h3 style={{
@@ -301,7 +365,7 @@ const TeacherDashboard = () => {
               className="btn btn-primary"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
             >
-              <span>➕</span>
+              <Plus size={20} strokeWidth={2} />
               Create New Exam
             </button>
           </div>
@@ -326,7 +390,7 @@ const TeacherDashboard = () => {
 
             {exams.length === 0 ? (
               <EmptyState
-                icon="📝"
+                icon={<Clipboard size={48} strokeWidth={1.5} className="text-gray-400" />}
                 title="No Exams Yet"
                 message="Create your first exam to get started"
                 actionLabel="Create Exam"
@@ -429,12 +493,12 @@ const TeacherDashboard = () => {
                             borderRadius: 'var(--radius-full)',
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            backgroundColor: 
+                            backgroundColor:
                               exam.difficulty === 'easy' ? '#dcfce7' :
-                              exam.difficulty === 'medium' ? '#fef3c7' : '#fee2e2',
+                                exam.difficulty === 'medium' ? '#fef3c7' : '#fee2e2',
                             color:
                               exam.difficulty === 'easy' ? '#166534' :
-                              exam.difficulty === 'medium' ? '#854d0e' : '#991b1b',
+                                exam.difficulty === 'medium' ? '#854d0e' : '#991b1b',
                           }}>
                             {exam.difficulty.toUpperCase()}
                           </span>
@@ -449,8 +513,8 @@ const TeacherDashboard = () => {
                             {formatTime(exam.startTime)}
                           </div>
                         </td>
-                        <td style={{ 
-                          padding: 'var(--spacing-md)', 
+                        <td style={{
+                          padding: 'var(--spacing-md)',
                           textAlign: 'center',
                           fontWeight: '600',
                           color: 'var(--primary-purple)',
@@ -472,14 +536,14 @@ const TeacherDashboard = () => {
                 </table>
               </div>
             )}
-            
+
             {/* Load More Button */}
             {exams.length > 0 && currentPage < totalPages && (
-              <div style={{ 
-                textAlign: 'center', 
-                marginTop: 'var(--spacing-xl)', 
-                paddingTop: 'var(--spacing-lg)', 
-                borderTop: '1px solid var(--border-color)' 
+              <div style={{
+                textAlign: 'center',
+                marginTop: 'var(--spacing-xl)',
+                paddingTop: 'var(--spacing-lg)',
+                borderTop: '1px solid var(--border-color)'
               }}>
                 <button
                   onClick={loadMoreExams}
@@ -489,7 +553,7 @@ const TeacherDashboard = () => {
                     fontSize: '0.95rem',
                     fontWeight: '600',
                     color: loadingMore ? 'var(--text-secondary)' : 'var(--primary-purple)',
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--bg-card)',
                     border: '2px solid var(--primary-purple)',
                     borderRadius: 'var(--radius-lg)',
                     cursor: loadingMore ? 'not-allowed' : 'pointer',
@@ -522,11 +586,11 @@ const TeacherDashboard = () => {
                 </button>
               </div>
             )}
-            
+
             {/* Pagination Info */}
             {exams.length > 0 && (
-              <div style={{ 
-                textAlign: 'center', 
+              <div style={{
+                textAlign: 'center',
                 marginTop: 'var(--spacing-md)',
                 color: 'var(--text-secondary)',
                 fontSize: '0.875rem',
@@ -538,7 +602,7 @@ const TeacherDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

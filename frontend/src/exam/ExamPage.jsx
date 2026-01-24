@@ -4,6 +4,7 @@ import { useStudentAuth } from '../contexts/StudentAuthContext';
 import { studentAPI, examAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { showSuccess, showError } from '../utils/notifications';
+import ThemeToggle from '../components/ThemeToggle/ThemeToggle';
 
 const ExamPage = () => {
     const { academySlug, examId } = useParams();
@@ -379,7 +380,7 @@ const ExamPage = () => {
             <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
                 {/* Exam Header */}
                 <div style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--bg-card)',
                     borderBottom: '1px solid var(--neutral-200)',
                     padding: 'var(--spacing-xl) 0',
                     marginBottom: 'var(--spacing-xl)'
@@ -516,7 +517,7 @@ const ExamPage = () => {
             <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
                 {/* Exam Header */}
                 <div style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--bg-card)',
                     borderBottom: '1px solid var(--neutral-200)',
                     padding: 'var(--spacing-xl) 0',
                     marginBottom: 'var(--spacing-xl)'
@@ -677,9 +678,14 @@ const ExamPage = () => {
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
+            {/* Theme Toggle */}
+            <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1000 }}>
+                <ThemeToggle />
+            </div>
+            
             {/* Exam Header */}
             <div style={{
-                backgroundColor: 'white',
+                backgroundColor: 'var(--bg-card)',
                 borderBottom: '1px solid var(--neutral-200)',
                 padding: 'var(--spacing-xl) 0',
                 marginBottom: 'var(--spacing-xl)'

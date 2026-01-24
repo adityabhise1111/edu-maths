@@ -86,6 +86,102 @@
     --container-md: 768px;
     --container-lg: 1024px;
     --container-xl: 1280px;
+
+    /* Border Color */
+    --border-color: var(--neutral-200);
+}
+
+/* ========================================
+   DARK MODE THEME VARIABLES (SEMANTIC ROLES)
+   Using zinc scale for professional contrast
+   ======================================== */
+
+.dark,
+[data-theme="dark"],
+[data-bs-theme="dark"] {
+    /* ===== BACKGROUND ROLES ===== */
+    /* Page background - Deepest level */
+    --bg-primary: #09090b;
+    /* zinc-950 - Main page background */
+    --bg-secondary: #18181b;
+    /* zinc-900 - Slightly elevated surface */
+    --bg-card: #27272a;
+    /* zinc-800 - Card/table background */
+
+    /* ===== TEXT ROLES ===== */
+    /* Main text - Highest contrast for readability */
+    --text-primary: #fafafa;
+    /* zinc-50 - Primary readable text */
+    --text-secondary: #a1a1aa;
+    /* zinc-400 - Secondary muted text */
+    --text-muted: #71717a;
+    /* zinc-500 - Very subtle text */
+
+    /* ===== NEUTRAL SCALE (Inverted for dark) ===== */
+    --neutral-50: #27272a;
+    /* zinc-800 */
+    --neutral-100: #3f3f46;
+    /* zinc-700 */
+    --neutral-200: #52525b;
+    /* zinc-600 */
+    --neutral-300: #71717a;
+    /* zinc-500 */
+    --neutral-400: #a1a1aa;
+    /* zinc-400 */
+    --neutral-500: #d4d4d8;
+    /* zinc-300 */
+    --neutral-600: #e4e4e7;
+    /* zinc-200 */
+    --neutral-700: #f4f4f5;
+    /* zinc-100 */
+    --neutral-800: #fafafa;
+    /* zinc-50 */
+    --neutral-900: #ffffff;
+    /* white */
+
+    /* ===== BORDER ROLES ===== */
+    /* Borders - Visible but subtle */
+    --border-color: #3f3f46;
+    /* zinc-700 - Default borders */
+
+    /* ===== SHADOWS (Darker for depth) ===== */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 10px 10px -5px rgba(0, 0, 0, 0.7);
+
+    /* ===== BRAND COLORS (Adjusted for dark mode visibility) ===== */
+    --primary-purple: #818cf8;
+    /* indigo-400 - More visible in dark */
+    --primary-purple-dark: #6366f1;
+    /* indigo-500 */
+    --primary-purple-light: #a5b4fc;
+    /* indigo-300 */
+
+    /* ===== SEMANTIC COLORS (Higher contrast) ===== */
+    --success: #4ade80;
+    /* green-400 - Brighter green */
+    --error: #f87171;
+    /* red-400 - Softer red */
+    --warning: #fbbf24;
+    /* amber-400 - Warmer yellow */
+    --info: #60a5fa;
+    /* blue-400 - Softer blue */
+}
+
+/* ========================================
+   INSTANT THEME TRANSITIONS
+   ======================================== */
+
+* {
+    transition: background-color 0s ease,
+        color 0s ease,
+        border-color 0s ease;
+}
+
+/* Prevent transitions on page load */
+.preload * {
+    transition: none !important;
 }
 
 body {
@@ -575,6 +671,19 @@ body {
     gap: var(--spacing-xl);
 }
 
+/* Screen reader only - for accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
 /* Flexbox utilities */
 .flex {
     display: flex;
@@ -722,6 +831,7 @@ body {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }

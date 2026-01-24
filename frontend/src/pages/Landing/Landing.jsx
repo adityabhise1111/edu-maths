@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from "react-router-dom";
+import { GraduationCap, ChartNoAxesCombined, Lock } from 'lucide-react';
 
 const Landing = () => {
     return (
@@ -16,7 +17,8 @@ const Landing = () => {
                                 color: 'var(--primary-purple)',
                                 letterSpacing: '-0.02em'
                             }}>
-                                📚 EduMaths
+                                <GraduationCap size={28} strokeWidth={2} className="inline-block mr-2" />
+                                EduMaths
                             </h2>
                         </div>
 
@@ -57,8 +59,8 @@ const Landing = () => {
                         {/* Feature Card 1 */}
                         <div className="card card--interactive stagger-item">
                             <div className="text-center">
-                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>
-                                    🎓
+                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', color: 'var(--primary-purple)' }}>
+                                    <GraduationCap size={60} strokeWidth={1.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '1.25rem',
@@ -81,8 +83,8 @@ const Landing = () => {
                         {/* Feature Card 2 */}
                         <div className="card card--interactive stagger-item">
                             <div className="text-center">
-                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>
-                                    📊
+                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', color: 'var(--accent-teal)' }}>
+                                    <ChartNoAxesCombined size={60} strokeWidth={1.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '1.25rem',
@@ -105,8 +107,8 @@ const Landing = () => {
                         {/* Feature Card 3 */}
                         <div className="card card--interactive stagger-item">
                             <div className="text-center">
-                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>
-                                    🔒
+                                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)', color: 'var(--success)' }}>
+                                    <Lock size={60} strokeWidth={1.5} />
                                 </div>
                                 <h3 style={{
                                     fontSize: '1.25rem',

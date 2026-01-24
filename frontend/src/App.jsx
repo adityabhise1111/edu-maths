@@ -61,14 +61,8 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route           path="/:academySlug/dashboard/create-exam" 
-          element={
-            <ProtectedRoute type="teacher" requireAcademy>
-              <CreateExam />
-            </ProtectedRoute>
-          } 
-        />
-        <Route           path="/:academySlug/dashboard/create-exam" 
+        <Route 
+          path="/:academySlug/dashboard/create-exam" 
           element={
             <ProtectedRoute type="teacher" requireAcademy>
               <CreateExam />

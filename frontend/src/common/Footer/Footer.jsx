@@ -1,11 +1,13 @@
 import React from 'react';
+import { GraduationCap, Mail, Phone, Heart } from 'lucide-react';
 
 const Footer = () => {
   return (
     <footer style={{
-      backgroundColor: 'var(--neutral-900)',
-      color: 'white',
-      marginTop: 'auto'
+      backgroundColor: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+      marginTop: 'auto',
+      borderTop: '1px solid var(--border-color)'
     }}>
       <div className="container">
         <div className="py-6">
@@ -16,13 +18,14 @@ const Footer = () => {
                 fontSize: '1.5rem',
                 fontWeight: '700',
                 marginBottom: 'var(--spacing-md)',
-                color: 'white'
+                color: 'var(--text-primary)'
               }}>
-                📚 EduMaths
+                <GraduationCap size={24} strokeWidth={2} className="inline-block mr-2" />
+                EduMaths
               </h3>
               <p style={{
                 fontSize: '0.95rem',
-                color: 'var(--neutral-300)',
+                color: 'var(--text-secondary)',
                 lineHeight: '1.6'
               }}>
                 Educational platform for mathematics learning and assessment.
@@ -36,7 +39,7 @@ const Footer = () => {
                 fontSize: '1rem',
                 fontWeight: '600',
                 marginBottom: 'var(--spacing-md)',
-                color: 'white',
+                color: 'var(--text-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
@@ -51,13 +54,13 @@ const Footer = () => {
                   <a
                     href="/"
                     style={{
-                      color: 'var(--neutral-300)',
+                      color: 'var(--text-secondary)',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       transition: 'color var(--transition-fast)'
                     }}
-                    onMouseEnter={(e) => e.target.style.color = 'white'}
-                    onMouseLeave={(e) => e.target.style.color = 'var(--neutral-300)'}
+                    onMouseEnter={(e) => e.target.style.color = 'var(--primary-purple)'}
+                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
                   >
                     Home
                   </a>
@@ -66,13 +69,13 @@ const Footer = () => {
                   <a
                     href="/login"
                     style={{
-                      color: 'var(--neutral-300)',
+                      color: 'var(--text-secondary)',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       transition: 'color var(--transition-fast)'
                     }}
-                    onMouseEnter={(e) => e.target.style.color = 'white'}
-                    onMouseLeave={(e) => e.target.style.color = 'var(--neutral-300)'}
+                    onMouseEnter={(e) => e.target.style.color = 'var(--primary-purple)'}
+                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
                   >
                     Teacher Login
                   </a>
@@ -81,13 +84,13 @@ const Footer = () => {
                   <a
                     href="/signup"
                     style={{
-                      color: 'var(--neutral-300)',
+                      color: 'var(--text-secondary)',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       transition: 'color var(--transition-fast)'
                     }}
-                    onMouseEnter={(e) => e.target.style.color = 'white'}
-                    onMouseLeave={(e) => e.target.style.color = 'var(--neutral-300)'}
+                    onMouseEnter={(e) => e.target.style.color = 'var(--primary-purple)'}
+                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
                   >
                     Get Started
                   </a>
@@ -101,7 +104,7 @@ const Footer = () => {
                 fontSize: '1rem',
                 fontWeight: '600',
                 marginBottom: 'var(--spacing-md)',
-                color: 'white',
+                color: 'var(--text-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
@@ -114,17 +117,19 @@ const Footer = () => {
               }}>
                 <li style={{
                   marginBottom: 'var(--spacing-sm)',
-                  color: 'var(--neutral-300)',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.95rem'
                 }}>
-                  📧 info@edumaths.com
+                  <Mail size={16} strokeWidth={2} className="inline-block mr-2" />
+                  info@edumaths.com
                 </li>
                 <li style={{
                   marginBottom: 'var(--spacing-sm)',
-                  color: 'var(--neutral-300)',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.95rem'
                 }}>
-                  📱 +1234567890
+                  <Phone size={16} strokeWidth={2} className="inline-block mr-2" />
+                  +1234567890
                 </li>
               </ul>
             </div>
@@ -133,17 +138,17 @@ const Footer = () => {
 
         {/* Copyright */}
         <div style={{
-          borderTop: '1px solid var(--neutral-700)',
+          borderTop: '1px solid var(--border-color)',
           paddingTop: 'var(--spacing-lg)',
           paddingBottom: 'var(--spacing-lg)',
           textAlign: 'center'
         }}>
           <p style={{
             margin: '0',
-            color: 'var(--neutral-400)',
+            color: 'var(--text-muted)',
             fontSize: '0.875rem'
           }}>
-            © 2026 EduMaths. All rights reserved. Made with ❤️ for education.
+            © 2026 EduMaths. All rights reserved. Made with <Heart size={14} strokeWidth={2} className="inline-block text-red-500" fill="currentColor" /> for education.
           </p>
         </div>
       </div>

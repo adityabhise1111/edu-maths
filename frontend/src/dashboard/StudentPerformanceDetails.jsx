@@ -5,6 +5,7 @@ import { teacherAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import DashboardLayout from './DashboardLayout/DashboardLayout';
+import { Skeleton, SkeletonText, SkeletonTable, SkeletonAvatar } from '../components/Skeleton';
 
 const StudentPerformanceDetails = () => {
     const { academySlug, studentId } = useParams();
@@ -82,7 +83,45 @@ const StudentPerformanceDetails = () => {
     if (loading) {
         return (
             <DashboardLayout>
-                <LoadingSpinner message="Loading student performance..." />
+                <div style={{ minHeight: 'calc(100vh - 120px)', backgroundColor: 'var(--bg-secondary)', padding: 'var(--spacing-xl)' }}>
+                    {/* Header Skeleton */}
+                    <div className="card animate-fade-in" style={{ marginBottom: 'var(--spacing-xl)' }}>
+                        {/* Breadcrumb Skeleton */}
+                        <Skeleton width="200px" height="14px" style={{ marginBottom: 'var(--spacing-md)' }} />
+
+                        {/* Title Section Skeleton */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
+                            <SkeletonAvatar size="64px" />
+                            <div style={{ flex: 1 }}>
+                                <Skeleton width="180px" height="30px" style={{ marginBottom: 'var(--spacing-sm)' }} />
+                                <Skeleton width="120px" height="16px" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Stats Cards Skeleton */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: 'var(--spacing-lg)',
+                        marginBottom: 'var(--spacing-xl)'
+                    }} className="animate-fade-in">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="card">
+                                <Skeleton width="100px" height="14px" style={{ marginBottom: 'var(--spacing-sm)' }} />
+                                <Skeleton width="80px" height="32px" />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Performance Table Skeleton */}
+                    <div className="card animate-fade-in" style={{ padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: 'var(--spacing-lg)', borderBottom: '1px solid var(--border-color)' }}>
+                            <Skeleton width="200px" height="24px" />
+                        </div>
+                        <SkeletonTable rows={5} columns={5} />
+                    </div>
+                </div>
             </DashboardLayout>
         );
     }
@@ -102,7 +141,7 @@ const StudentPerformanceDetails = () => {
             <div style={{ minHeight: 'calc(100vh - 120px)', backgroundColor: 'var(--bg-secondary)', padding: 'var(--spacing-xl)' }}>
                 {/* Header */}
                 <div style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--bg-card)',
                     borderRadius: 'var(--radius-lg)',
                     padding: 'var(--spacing-xl)',
                     marginBottom: 'var(--spacing-xl)',
@@ -292,7 +331,7 @@ const StudentPerformanceDetails = () => {
                                     {performances.map((perf, index) => {
                                         const difficultyStyle = getDifficultyColor(perf.difficulty);
                                         const isSubmitted = perf.submittedAt !== null;
-                                        
+
                                         return (
                                             <tr
                                                 key={index}

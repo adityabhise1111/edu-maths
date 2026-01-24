@@ -1,0 +1,113 @@
+/* Base Skeleton Styles */
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--neutral-100, #f3f4f6) 0%,
+            var(--neutral-200, #e5e7eb) 50%,
+            var(--neutral-100, #f3f4f6) 100%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Skeleton Text */
+.skeleton-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.skeleton-text-line {
+    display: block;
+}
+
+/* Skeleton Card */
+.skeleton-card {
+    padding: var(--spacing-lg);
+}
+
+.skeleton-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.skeleton-card-content {
+    margin-top: var(--spacing-md);
+}
+
+/* Skeleton Stat Card */
+.skeleton-stat-card {
+    padding: var(--spacing-lg);
+    animation: skeleton-fade-in 0.3s ease-in-out;
+}
+
+/* Skeleton Table */
+.skeleton-table {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.skeleton-table-row {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.skeleton-table-row:hover {
+    background-color: var(--bg-secondary);
+}
+
+/* Skeleton Avatar */
+.skeleton-avatar {
+    display: inline-block;
+}
+
+/* Skeleton Button */
+.skeleton-button {
+    display: inline-block;
+}
+
+/* Fade-in animation for skeleton elements */
+@keyframes skeleton-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Accessibility - Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+        background: var(--neutral-200, #e5e7eb);
+    }
+
+    .skeleton-stat-card {
+        animation: none;
+    }
+}
+
+/* Dark mode support (if using data-bs-theme or similar) */
+[data-bs-theme="dark"] .skeleton,
+.dark-mode .skeleton {
+    background: linear-gradient(90deg,
+            rgba(55, 65, 81, 0.5) 0%,
+            rgba(75, 85, 99, 0.5) 50%,
+            rgba(55, 65, 81, 0.5) 100%);
+    background-size: 200% 100%;
+}

@@ -103,7 +103,7 @@ const StudentExamDetails = () => {
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-secondary)', paddingBottom: 'var(--spacing-3xl)' }}>
             {/* Header */}
             <div style={{
-                backgroundColor: 'white',
+                backgroundColor: 'var(--bg-card)',
                 borderBottom: '1px solid var(--neutral-200)',
                 padding: 'var(--spacing-xl) 0',
                 marginBottom: 'var(--spacing-xl)'
@@ -291,7 +291,7 @@ const StudentExamDetails = () => {
                                     const isCorrect = q.correctAnswer === optIndex;
 
                                     let borderColor = 'var(--neutral-200)';
-                                    let backgroundColor = 'white';
+                                    let backgroundColor = 'var(--bg-card)';
                                     let icon = null;
 
                                     if (isSelected && isCorrect) {

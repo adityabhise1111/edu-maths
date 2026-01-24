@@ -5,6 +5,7 @@ import { teacherAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import DashboardLayout from './DashboardLayout/DashboardLayout';
+import { PerformanceSkeleton } from './StudentsPerformance/PerformanceSkeleton';
 
 const StudentsPerformance = () => {
     const { academySlug } = useParams();
@@ -15,22 +16,24 @@ const StudentsPerformance = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'averageScore', direction: 'desc' });
-    
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    // Redirect if not authenticated
-    useEffect(() => {
-        if (isLoaded && !isSignedIn) {
-            navigate('/login');
-        }
-    }, [isLoaded, isSignedIn, navigate]);
-
     // Fetch students performance data
     useEffect(() => {
-        if (!isSignedIn || !academy?.id) return;
+        if (!isLoaded) return; // Wait for auth to load
+        if (!isSignedIn) {
+            navigate('/login');
+            return;
+        }
+        if (!academy?.id) {
+            setLoading(false);
+            setError('Academy not found. Please select an academy.');
+            return;
+        }
 
         const fetchData = async () => {
             try {
@@ -39,7 +42,7 @@ const StudentsPerformance = () => {
 
                 const response = await teacherAPI.getAcademyStudentsPerformance(academy.id, { page: 1, limit: 10 });
                 setStudentsData(response.students || []);
-                
+
                 // Set pagination metadata
                 if (response.pagination) {
                     setCurrentPage(response.pagination.currentPage);
@@ -54,19 +57,19 @@ const StudentsPerformance = () => {
         };
 
         fetchData();
-    }, [isSignedIn, academy]);
+    }, [isLoaded, isSignedIn, academy, navigate]);
 
     // Load more students
     const loadMoreStudents = async () => {
         if (currentPage >= totalPages || !academy?.id) return;
-        
+
         try {
             setLoadingMore(true);
             const nextPage = currentPage + 1;
             const response = await teacherAPI.getAcademyStudentsPerformance(academy.id, { page: nextPage, limit: 10 });
-            
+
             setStudentsData(prev => [...prev, ...(response.students || [])]);
-            
+
             if (response.pagination) {
                 setCurrentPage(response.pagination.currentPage);
                 setTotalPages(response.pagination.totalPages);
@@ -85,7 +88,7 @@ const StudentsPerformance = () => {
         const bValue = b[sortConfig.key];
 
         if (aValue === bValue) return 0;
-        
+
         const compareResult = aValue < bValue ? -1 : 1;
         return sortConfig.direction === 'asc' ? compareResult : -compareResult;
     });
@@ -120,7 +123,7 @@ const StudentsPerformance = () => {
     const academyStats = {
         totalStudents: studentsData.length,
         activeStudents: studentsData.filter(s => s.totalExamsAttempted > 0).length,
-        avgClassScore: studentsData.length > 0 
+        avgClassScore: studentsData.length > 0
             ? (studentsData.reduce((sum, s) => sum + s.averageScore, 0) / studentsData.length).toFixed(2)
             : 0,
         totalExams: studentsData.reduce((sum, s) => sum + s.totalExamsSubmitted, 0)
@@ -129,7 +132,7 @@ const StudentsPerformance = () => {
     if (loading) {
         return (
             <DashboardLayout>
-                <LoadingSpinner message="Loading performance data..." />
+                <PerformanceSkeleton />
             </DashboardLayout>
         );
     }
@@ -139,7 +142,7 @@ const StudentsPerformance = () => {
             <div style={{ minHeight: 'calc(100vh - 120px)', backgroundColor: 'var(--bg-secondary)', padding: 'var(--spacing-xl)' }}>
                 {/* Header */}
                 <div style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'var(--bg-card)',
                     borderRadius: 'var(--radius-lg)',
                     padding: 'var(--spacing-xl)',
                     marginBottom: 'var(--spacing-xl)',
@@ -437,10 +440,10 @@ const StudentsPerformance = () => {
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         {/* Load More Button */}
                         {studentsData.length > 0 && currentPage < totalPages && (
-                            <div style={{ 
+                            <div style={{
                                 padding: 'var(--spacing-xl)',
                                 textAlign: 'center',
                                 borderTop: '1px solid var(--neutral-200)'
@@ -477,7 +480,7 @@ const StudentsPerformance = () => {
                                 </button>
                             </div>
                         )}
-                        
+
                         {/* Pagination Info */}
                         {studentsData.length > 0 && (
                             <div style={{

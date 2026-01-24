@@ -5,6 +5,7 @@ import { academyAPI } from '../../services/api';
 import { showSuccess, showError } from '../../utils/notifications';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ErrorAlert from '../../components/ErrorAlert';
+import ThemeToggle from '../../components/ThemeToggle/ThemeToggle';
 
 const StudentLogin = () => {
   const { academySlug } = useParams();
@@ -122,6 +123,11 @@ const StudentLogin = () => {
 
   return (
     <div className="page-container">
+      {/* Theme Toggle */}
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 1000 }}>
+        <ThemeToggle />
+      </div>
+      
       <div className="container container--sm">
         <div className="card animate-fade-in">
           {/* Academy Info */}

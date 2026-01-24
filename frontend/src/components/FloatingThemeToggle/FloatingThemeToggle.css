@@ -1,0 +1,107 @@
+/* Floating Theme Toggle Button Styles */
+.floating-theme-toggle {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border: 2px solid var(--neutral-300);
+    border-radius: 50%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.floating-theme-toggle:hover {
+    background-color: var(--primary-purple);
+    color: white;
+    border-color: var(--primary-purple);
+    transform: scale(1.1);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.floating-theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.floating-theme-toggle:focus-visible {
+    outline: 3px solid var(--primary-purple);
+    outline-offset: 3px;
+}
+
+.floating-theme-toggle svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-theme-toggle:hover svg {
+    transform: rotate(180deg);
+}
+
+/* Dark mode specific adjustments */
+[data-bs-theme="dark"] .floating-theme-toggle {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+[data-bs-theme="dark"] .floating-theme-toggle:hover {
+    background-color: var(--primary-purple-light);
+    border-color: var(--primary-purple-light);
+    box-shadow: 0 8px 20px rgba(129, 140, 248, 0.3);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .floating-theme-toggle {
+        width: 50px;
+        height: 50px;
+        bottom: 1.5rem;
+        right: 1.5rem;
+    }
+
+    .floating-theme-toggle svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Animation on mount */
+@keyframes float-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.floating-theme-toggle {
+    animation: float-in 0.4s ease-out;
+}
+
+/* Pulse animation to draw attention (optional) */
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    }
+}
+
+[data-bs-theme="dark"] .floating-theme-toggle {
+    animation: float-in 0.4s ease-out;
+}
