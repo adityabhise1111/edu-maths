@@ -161,9 +161,9 @@ export const examAPI = {
   // Create new exam (teacher)
   create: (data) => api.post('/api/exams/create', data),
 
-  // Get all exams for academy (public) with pagination
-  getByAcademy: (academySlug, params = {}) => 
-    api.get(`/api/exams/academy/${academySlug}`, { params }),
+  // Get all exams for academy (public) with pagination (supports abort signal for cancellation)
+  getByAcademy: (academySlug, params = {}, signal) => 
+    api.get(`/api/exams/academy/${academySlug}`, { params, signal }),
 
   // Check exam status (student)
   getStatus: (examId) => api.get(`/api/exams/${examId}/status`),
@@ -192,13 +192,13 @@ export const examAPI = {
 // ============================================
 
 export const teacherAPI = {
-  // Get all exams for teacher's academy
-  getAcademyExams: (params = {}) => 
-    api.get('/api/teacher/academy/exams', { params }),
+  // Get all exams for teacher's academy (supports abort signal for cancellation)
+  getAcademyExams: (params = {}, signal) => 
+    api.get('/api/teacher/academy/exams', { params, signal }),
 
-  // Get all students for teacher's academy
-  getAcademyStudents: (params = {}) => 
-    api.get('/api/teacher/academy/students', { params }),
+  // Get all students for teacher's academy (supports abort signal for cancellation)
+  getAcademyStudents: (params = {}, signal) => 
+    api.get('/api/teacher/academy/students', { params, signal }),
 
   // Create a new student
   createStudent: (academyId, username, password) => 
@@ -208,9 +208,9 @@ export const teacherAPI = {
   deleteStudent: (studentId) => 
     api.delete(`/api/teacher/students/${studentId}`),
 
-  // Get all students performance summary for academy
-  getAcademyStudentsPerformance: (academyId, params = {}) => 
-    api.get(`/api/teacher/academy/${academyId}/students-performance`, { params }),
+  // Get all students performance summary for academy (supports abort signal for cancellation)
+  getAcademyStudentsPerformance: (academyId, params = {}, signal) => 
+    api.get(`/api/teacher/academy/${academyId}/students-performance`, { params, signal }),
 
   // Get individual student performance details
   getStudentPerformanceDetails: (studentId) => 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { teacherAPI } from '../services/api';
@@ -21,6 +21,11 @@ const StudentsPerformance = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
+
+    // Ref to track in-progress request (synchronous check to prevent race conditions)
+    const isLoadingRef = useRef(false);
+    // Ref to store AbortController for request cancellation
+    const abortControllerRef = useRef(null);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -58,14 +63,30 @@ const StudentsPerformance = () => {
         fetchData();
     }, [isLoaded, isSignedIn, academy?.id, navigate]);
 
-    // Load more students
-    const loadMoreStudents = async () => {
-        if (currentPage >= totalPages || !academy?.id) return;
+    // Load more students with protection against rapid clicks
+    const loadMoreStudents = useCallback(async () => {
+        // Synchronous check using ref to prevent race conditions from rapid clicks
+        if (isLoadingRef.current || currentPage >= totalPages || !academy?.id) return;
+        
+        // Set ref immediately (synchronous) to block subsequent calls
+        isLoadingRef.current = true;
+        
+        // Cancel any previous pending request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        
+        // Create new AbortController for this request
+        abortControllerRef.current = new AbortController();
 
         try {
             setLoadingMore(true);
             const nextPage = currentPage + 1;
-            const response = await teacherAPI.getAcademyStudentsPerformance(academy.id, { page: nextPage, limit: 10 });
+            const response = await teacherAPI.getAcademyStudentsPerformance(
+                academy.id, 
+                { page: nextPage, limit: 10 },
+                abortControllerRef.current.signal
+            );
 
             setStudentsData(prev => [...prev, ...(response.students || [])]);
 
@@ -74,12 +95,17 @@ const StudentsPerformance = () => {
                 setTotalPages(response.pagination.totalPages);
             }
         } catch (err) {
+            // Ignore abort errors
+            if (err.name === 'AbortError' || err.name === 'CanceledError') {
+                return;
+            }
             console.error('Error loading more students:', err);
             setError('Failed to load more students');
         } finally {
+            isLoadingRef.current = false;
             setLoadingMore(false);
         }
-    };
+    }, [currentPage, totalPages, academy?.id]);
 
     // Sort students
     const sortedStudents = [...studentsData].sort((a, b) => {

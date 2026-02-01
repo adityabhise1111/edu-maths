@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useStudentAuth } from "../../contexts/StudentAuthContext";
 import { academyAPI, examAPI } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -22,6 +22,11 @@ const AcademyPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Ref to track in-progress request (synchronous check to prevent race conditions)
+  const isLoadingRef = useRef(false);
+  // Ref to store AbortController for request cancellation
+  const abortControllerRef = useRef(null);
 
   // Fetch academy and exams on mount
   useEffect(() => {
@@ -57,14 +62,30 @@ const AcademyPage = () => {
     fetchData();
   }, [academySlug]);
 
-  // Load more exams
-  const loadMoreExams = async () => {
-    if (currentPage >= totalPages) return;
+  // Load more exams with protection against rapid clicks
+  const loadMoreExams = useCallback(async () => {
+    // Synchronous check using ref to prevent race conditions from rapid clicks
+    if (isLoadingRef.current || currentPage >= totalPages) return;
+    
+    // Set ref immediately (synchronous) to block subsequent calls
+    isLoadingRef.current = true;
+    
+    // Cancel any previous pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       setLoadingMore(true);
       const nextPage = currentPage + 1;
-      const examsResponse = await examAPI.getByAcademy(academySlug, { page: nextPage, limit: 10 });
+      const examsResponse = await examAPI.getByAcademy(
+        academySlug, 
+        { page: nextPage, limit: 10 },
+        abortControllerRef.current.signal
+      );
 
       setExams(prev => [...prev, ...(examsResponse.exams || [])]);
 
@@ -73,12 +94,17 @@ const AcademyPage = () => {
         setTotalPages(examsResponse.pagination.totalPages);
       }
     } catch (err) {
+      // Ignore abort errors
+      if (err.name === 'AbortError' || err.name === 'CanceledError') {
+        return;
+      }
       console.error("Error loading more exams:", err);
       setError("Failed to load more exams");
     } finally {
+      isLoadingRef.current = false;
       setLoadingMore(false);
     }
-  };
+  }, [academySlug, currentPage, totalPages]);
 
   const handleExamClick = (examId) => {
     if (!isAuthenticated) {
