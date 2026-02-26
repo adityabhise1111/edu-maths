@@ -163,7 +163,7 @@ export default function AcademySelect() {
                     </View>
                 )}
 
-                {/* Quick select for testing */}
+                {/* Quick select for testing
                 {!academyDetails && !loading && (
                     <View style={styles.quickSelect}>
                         <Text style={styles.quickSelectLabel}>Quick Select (Testing):</Text>
@@ -180,14 +180,14 @@ export default function AcademySelect() {
                             <Text style={styles.quickButtonText}>Demo Academy</Text>
                         </TouchableOpacity>
                     </View>
-                )}
+                )} */}
 
-                {/* API Info */}
+                {/* API Info
                 <View style={styles.apiInfo}>
-                    <Text style={styles.apiInfoText}>
-                        API: GET /api/academy/:slug
-                    </Text>
-                </View>
+                    <Text style={styles.apiInfoText}> */}
+                        {/* API: GET /api/academy/:slug */}
+                    {/* </Text>
+                </View> */}
             </View>
         </ScrollView>
     );

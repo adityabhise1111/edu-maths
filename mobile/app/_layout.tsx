@@ -58,7 +58,7 @@ function NavigationContent() {
 
                 // Divert to Gate to resolve session state (Live, Expired, or Submitted)
                 if (!isExamRoute || forceRedirect) {
-                    console.log('🔄 Session Recovery: Diverting to ExamGate for resolution...', session.examStatus);
+                    // console.log('🔄 Session Recovery: Diverting to ExamGate for resolution...', session.examStatus);
                     router.replace({
                         pathname: '/(auth)/exam-gate',
                         params: { examId: session.examId }
@@ -67,7 +67,7 @@ function NavigationContent() {
                 }
             }
         } catch (error) {
-            console.error('❌ Corrupted exam session detected, clearing...', error);
+            // console.error('❌ Corrupted exam session detected, clearing...', error);
             await examSessionManager.clearSession();
         }
         return false;
@@ -94,7 +94,7 @@ function NavigationContent() {
     useEffect(() => {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
             if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-                console.log('📱 App has come to the foreground, checking session...');
+                // console.log('📱 App has come to the foreground, checking session...');
                 checkExamSession();
             }
             appState.current = nextAppState;

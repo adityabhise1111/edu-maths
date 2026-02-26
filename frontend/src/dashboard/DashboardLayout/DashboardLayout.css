@@ -188,7 +188,7 @@
 }
 
 .dashboard-sidebar--collapsed {
-    width: 70px;
+    width: 101px;
 }
 
 .dashboard-nav {
@@ -334,7 +334,7 @@
 
 /* Custom Scrollbar for Content */
 .dashboard-content::-webkit-scrollbar {
-    width: 8px;
+    width: 9px;
 }
 
 .dashboard-content::-webkit-scrollbar-track {

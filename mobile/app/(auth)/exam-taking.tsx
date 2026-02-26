@@ -160,7 +160,7 @@ export default function ExamTakingScreen() {
                 // User minimized or switched app
                 const log = { type: 'APP_BACKGROUND', timestamp: new Date().toISOString() };
                 violationLogRef.current.push(log);
-                console.warn('🚩 Integrity Warning: App moved to background', log);
+                // console.warn('🚩 Integrity Warning: App moved to background', log);
             } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
                 // User returned
                 Alert.alert(
@@ -179,7 +179,7 @@ export default function ExamTakingScreen() {
             if (!hasSubmittedRef.current && !isConfirmedRef.current) {
                 const log = { type: 'SCREEN_BLUR', timestamp: new Date().toISOString() };
                 violationLogRef.current.push(log);
-                console.warn('🚩 Integrity Warning: Tab switched or screen lost focus', log);
+                // console.warn('🚩 Integrity Warning: Tab switched or screen lost focus', log);
             }
         });
 
@@ -254,7 +254,7 @@ export default function ExamTakingScreen() {
             session.examStatus === 'active';
 
         if (!isSessionValid) {
-            console.error('🚫 Blocked access to ExamTaking: Invalid Store Session');
+            // console.error('🚫 Blocked access to ExamTaking: Invalid Store Session');
             Alert.alert('Access Denied', 'No active exam session found.');
             router.replace('/(auth)/(tabs)/exam');
             return;
@@ -382,7 +382,7 @@ export default function ExamTakingScreen() {
         const syncInterval = setInterval(async () => {
             if (pendingSavesRef.current.size === 0) return;
 
-            console.log(`🔄 Retrying ${pendingSavesRef.current.size} pending answers...`);
+            // console.log(`🔄 Retrying ${pendingSavesRef.current.size} pending answers...`);
             setSyncStatus('syncing');
             const session = examSessionManager.getSession();
             const examId = session?.examId;

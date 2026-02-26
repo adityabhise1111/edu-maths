@@ -47,7 +47,7 @@ export default function ExamGateScreen() {
 
             if (resultRes.success) {
                 // CASE: ALREADY SUBMITTED
-                console.log('✅ Exam already submitted, initializing session for result.');
+                // console.log('✅ Exam already submitted, initializing session for result.');
 
                 // SATISFY ENTRY GUARD: ResultScreen depends on having a submitted session
                 await examSessionManager.setSession({
@@ -149,7 +149,7 @@ export default function ExamGateScreen() {
             }
 
         } catch (err) {
-            console.error('Flow Controller Error:', err);
+            // console.error('Flow Controller Error:', err);
             setErrorMsg('Something went wrong on our side. We\'re working on it.');
             setLoading(false);
         }

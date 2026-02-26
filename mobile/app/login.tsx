@@ -11,6 +11,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '../store/AuthContext';
 import { apiClient } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function StudentLogin() {
     const router = useRouter();
@@ -19,6 +20,7 @@ export default function StudentLogin() {
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
@@ -103,7 +105,8 @@ export default function StudentLogin() {
                 <View style={styles.form}>
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Username</Text>
-                        <TextInput
+                        <View style={styles.userName}>
+                            <TextInput
                             style={styles.input}
                             placeholder="Enter your username"
                             value={username}
@@ -112,18 +115,32 @@ export default function StudentLogin() {
                             autoCorrect={false}
                             editable={!loading}
                         />
+                        </View>
                     </View>
 
                     <View style={styles.inputContainer}>
                         <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            editable={!loading}
-                        />
+                        <View style={styles.passwordWrapper}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter your password"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!showPassword}
+                                editable={!loading}
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeIcon}
+                                onPress={() => setShowPassword(!showPassword)}
+                                disabled={loading}
+                            >
+                                <Ionicons
+                                    name={showPassword ? 'eye-off' : 'eye'}
+                                    size={20}
+                                    color="#666"
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     <TouchableOpacity
@@ -142,8 +159,8 @@ export default function StudentLogin() {
                     </TouchableOpacity>
                 </View>
 
-                {/* API info */}
-                <View style={styles.apiInfo}>
+                API info
+                {/* <View style={styles.apiInfo}>
                     <Text style={styles.apiInfoLabel}>API Integration</Text>
                     <Text style={styles.apiInfoText}>
                         POST /api/students/login
@@ -151,7 +168,7 @@ export default function StudentLogin() {
                     <Text style={styles.apiInfoText}>
                         ✅ Connected to backend
                     </Text>
-                </View>
+                </View> */}
             </View>
         </View>
     );
@@ -202,12 +219,26 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     input: {
+        flex: 1,
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 8,
         padding: 16,
         fontSize: 16,
+    },
+    passwordWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    userName: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    eyeIcon: {
+        position: 'absolute',
+        right: 12,
+        padding: 8,
     },
     button: {
         backgroundColor: '#007AFF',
