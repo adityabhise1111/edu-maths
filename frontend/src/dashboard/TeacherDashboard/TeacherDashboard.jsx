@@ -6,7 +6,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import ErrorAlert from '../../components/ErrorAlert';
 import { SkeletonDashboardStats, SkeletonTable } from '../../components/Skeleton';
-import { Users, FileText, ChartNoAxesCombined, Plus, Clipboard } from 'lucide-react';
+import { Users, FileText, ChartNoAxesCombined, Plus, Clipboard, Clock, ArrowRight, BookOpen } from 'lucide-react';
 
 const TeacherDashboard = () => {
   const { academySlug } = useParams();
@@ -23,7 +23,7 @@ const TeacherDashboard = () => {
     totalExams: 0,
     totalResults: 0,
   });
-  
+
   // Ref to track if dashboard stats have been fetched (prevents refetch on re-renders)
   const dashboardStatsFetched = useRef(false);
 
@@ -36,17 +36,17 @@ const TeacherDashboard = () => {
   const fetchDashboardStats = useCallback(async () => {
     // Skip if already fetched
     if (dashboardStatsFetched.current) return;
-    
+
     try {
       const statsResponse = await teacherAPI.getDashboardStats();
       console.log("[Teacher dashboard] Stats response:", statsResponse);
-      
+
       setDashboardStats({
         totalStudents: statsResponse.totalStudents || 0,
         totalExams: statsResponse.totalExams || 0,
         totalResults: statsResponse.totalResults || 0,
       });
-      
+
       // Mark as fetched to prevent refetch
       dashboardStatsFetched.current = true;
     } catch (err) {
@@ -388,245 +388,327 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* Create Exam Button  */}
-          {/* <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-            <button
-              onClick={() => navigate(`/${academySlug}/dashboard/create-exam`)}
-              className="btn btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
-            >
-              <Plus size={20} strokeWidth={2} />
-              Create New Exam
-            </button>
-          </div>
-
-          {/* Exams List */}
-          <div className="card animate-fade-in">
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 'var(--spacing-lg)',
-            }}>
+          {/* Exams Section Header */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 'var(--spacing-lg)',
+          }}>
+            <div>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
+                fontSize: '1.125rem',
+                fontWeight: '600',
                 color: 'var(--text-primary)',
-                margin: '0',
+                margin: '0 0 0.2rem 0',
+                letterSpacing: '-0.01em',
               }}>
                 All Exams
               </h2>
+              <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                {exams.length > 0 ? `${exams.length} exam${exams.length !== 1 ? 's' : ''} in your academy` : 'No exams yet'}
+              </p>
             </div>
+            <button
+              onClick={() => navigate(`/${academySlug}/dashboard/create-exam`)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                color: 'white',
+                backgroundColor: 'var(--primary-purple)',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s ease, transform 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#5b21b6';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--primary-purple)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <Plus size={15} strokeWidth={2.5} />
+              New Exam
+            </button>
+          </div>
+
+          {/* Exams Table Card */}
+          <div style={{
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            overflow: 'hidden',
+          }} className="animate-fade-in">
 
             {exams.length === 0 ? (
-              <EmptyState
-                icon={<Clipboard size={48} strokeWidth={1.5} className="text-gray-400" />}
-                title="No Exams Yet"
-                message="Create your first exam to get started"
-                actionLabel="Create Exam"
-                onAction={() => navigate(`/${academySlug}/dashboard/create-exam`)}
-              />
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4rem 2rem',
+                gap: '1rem',
+              }}>
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '12px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <BookOpen size={24} strokeWidth={1.5} color="var(--text-secondary)" />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 0.375rem 0', fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.9375rem' }}>No exams yet</p>
+                  <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Create your first exam to get started</p>
+                </div>
+                <button
+                  onClick={() => navigate(`/${academySlug}/dashboard/create-exam`)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                    padding: '0.5rem 1.125rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'var(--primary-purple)',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--primary-purple)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.15s ease',
+                    marginTop: '0.25rem',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.06)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  Create Exam
+                </button>
+              </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '640px' }}>
+
+                  {/* Table Header */}
                   <thead>
-                    <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                      }}>
-                        Exam Title
-                      </th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                      }}>
-                        Difficulty
-                      </th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem)',
-                      }}>
-                        Duration
-                      </th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                      }}>
-                        Start Time
-                      </th>
-                      <th style={{
-                        textAlign: 'center',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                      }}>
-                        Attempts
-                      </th>
-                      <th style={{
-                        textAlign: 'right',
-                        padding: 'var(--spacing-md)',
-                        fontWeight: '600',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                      }}>
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exams.map((exam) => (
-                      <tr
-                        key={exam.examId}
-                        style={{
-                          borderBottom: '1px solid var(--border-color)',
-                          transition: 'background-color 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <td style={{ padding: 'var(--spacing-md)' }}>
-                          <div style={{
-                            fontWeight: '600',
-                            color: 'var(--text-primary)',
-                            marginBottom: '0.25rem',
-                          }}>
-                            {exam.title}
-                          </div>
-                          <div style={{
-                            fontSize: '0.875rem',
-                            color: 'var(--text-muted)',
-                          }}>
-                            {exam.totalQuestions} questions
-                          </div>
-                        </td>
-                        <td style={{ padding: 'var(--spacing-md)' }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: 'var(--radius-full)',
+                    <tr style={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      borderBottom: '1px solid var(--border-color)',
+                    }}>
+                      {[['Exam', 'left'], ['Difficulty', 'left'], ['Duration', 'left'], ['Scheduled', 'left'], ['Attempts', 'center'], ['', 'right']].map(([label, align]) => (
+                        <th
+                          key={label}
+                          style={{
+                            padding: '0.625rem 1rem',
+                            textAlign: align,
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            backgroundColor:
-                              exam.difficulty === 'easy' ? '#dcfce7' :
-                                exam.difficulty === 'medium' ? '#fef3c7' : '#fee2e2',
-                            color:
-                              exam.difficulty === 'easy' ? '#166534' :
-                                exam.difficulty === 'medium' ? '#854d0e' : '#991b1b',
-                          }}>
-                            {exam.difficulty.toUpperCase()}
-                          </span>
-                        </td>
-                        <td style={{ padding: 'var(--spacing-md)', color: 'var(--text-secondary)' }}>
-                          {exam.durationMinutes} min
-                        </td>
-                        <td style={{ padding: 'var(--spacing-md)' }}>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                            {formatDate(exam.startTime)}
-                            <br />
-                            {formatTime(exam.startTime)}
-                          </div>
-                        </td>
-                        <td style={{
-                          padding: 'var(--spacing-md)',
-                          textAlign: 'center',
-                          fontWeight: '600',
-                          color: 'var(--primary-purple)',
-                        }}>
-                          {exam.totalAttempts || 0}
-                        </td>
-                        <td style={{ padding: 'var(--spacing-md)', textAlign: 'right' }}>
-                          <button
-                            onClick={() => navigate(`/${academySlug}/dashboard/exams/${exam.examId}`)}
-                            className="btn btn-secondary"
-                            style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                          >
-                            View Details →
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            color: 'var(--text-secondary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  {/* Table Body */}
+                  <tbody>
+                    {exams.map((exam, idx) => {
+                      const difficultyConfig = {
+                        easy: { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: 'Easy' },
+                        medium: { bg: '#fffbeb', color: '#b45309', border: '#fde68a', label: 'Medium' },
+                        hard: { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: 'Hard' },
+                      };
+                      const diff = difficultyConfig[exam.difficulty] || difficultyConfig.medium;
+
+                      return (
+                        <tr
+                          key={exam.examId}
+                          style={{
+                            borderBottom: idx < exams.length - 1 ? '1px solid var(--border-color)' : 'none',
+                            transition: 'background-color 0.12s ease',
+                            cursor: 'default',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                        >
+                          {/* Exam Title + Meta */}
+                          <td style={{ padding: '0.875rem 1rem' }}>
+                            <div style={{ fontWeight: '500', color: 'var(--text-primary)', fontSize: '0.9375rem', marginBottom: '0.1875rem' }}>
+                              {exam.title}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                              <BookOpen size={11} strokeWidth={2} />
+                              {exam.totalQuestions} questions
+                            </div>
+                          </td>
+
+                          {/* Difficulty Badge */}
+                          <td style={{ padding: '0.875rem 1rem' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '0.1875rem 0.625rem',
+                              borderRadius: '5px',
+                              fontSize: '0.6875rem',
+                              fontWeight: '600',
+                              letterSpacing: '0.03em',
+                              backgroundColor: diff.bg,
+                              color: diff.color,
+                              border: `1px solid ${diff.border}`,
+                            }}>
+                              {diff.label}
+                            </span>
+                          </td>
+
+                          {/* Duration */}
+                          <td style={{ padding: '0.875rem 1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                              <Clock size={13} strokeWidth={2} />
+                              {exam.durationMinutes} min
+                            </div>
+                          </td>
+
+                          {/* Start Time */}
+                          <td style={{ padding: '0.875rem 1rem' }}>
+                            <div style={{ color: 'var(--text-primary)', fontSize: '0.875rem', fontWeight: '500' }}>
+                              {formatDate(exam.startTime)}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.125rem' }}>
+                              {formatTime(exam.startTime)}
+                            </div>
+                          </td>
+
+                          {/* Attempts */}
+                          <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '2rem',
+                              height: '1.75rem',
+                              padding: '0 0.5rem',
+                              borderRadius: '5px',
+                              fontSize: '0.8125rem',
+                              fontWeight: '600',
+                              color: exam.totalAttempts > 0 ? 'var(--primary-purple)' : 'var(--text-secondary)',
+                              backgroundColor: exam.totalAttempts > 0 ? 'rgba(124,58,237,0.08)' : 'var(--bg-secondary)',
+                            }}>
+                              {exam.totalAttempts || 0}
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                            <button
+                              onClick={() => navigate(`/${academySlug}/dashboard/exams/${exam.examId}`)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.375rem 0.875rem',
+                                fontSize: '0.8125rem',
+                                fontWeight: '500',
+                                color: 'var(--text-primary)',
+                                backgroundColor: 'transparent',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                whiteSpace: 'nowrap',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--primary-purple)';
+                                e.currentTarget.style.color = 'var(--primary-purple)';
+                                e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.04)';
+                                const arrow = e.currentTarget.querySelector('.btn-arrow');
+                                if (arrow) arrow.style.transform = 'translateX(2px)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--border-color)';
+                                e.currentTarget.style.color = 'var(--text-primary)';
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                const arrow = e.currentTarget.querySelector('.btn-arrow');
+                                if (arrow) arrow.style.transform = 'translateX(0)';
+                              }}
+                            >
+                              View
+                              <ArrowRight size={13} strokeWidth={2} className="btn-arrow" style={{ transition: 'transform 0.15s ease' }} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
 
-            {/* Load More Button */}
+            {/* Load More */}
             {exams.length > 0 && currentPage < totalPages && (
               <div style={{
+                padding: '1rem',
+                borderTop: '1px solid var(--border-color)',
                 textAlign: 'center',
-                marginTop: 'var(--spacing-xl)',
-                paddingTop: 'var(--spacing-lg)',
-                borderTop: '1px solid var(--border-color)'
               }}>
                 <button
                   onClick={loadMoreExams}
                   disabled={loadingMore}
                   style={{
-                    padding: '0.75rem 2rem',
-                    fontSize: '0.95rem',
-                    fontWeight: '600',
+                    padding: '0.5rem 1.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
                     color: loadingMore ? 'var(--text-secondary)' : 'var(--primary-purple)',
-                    backgroundColor: 'var(--bg-card)',
-                    border: '2px solid var(--primary-purple)',
-                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
                     cursor: loadingMore ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease',
-                    minWidth: '200px',
+                    transition: 'all 0.15s ease',
                     opacity: loadingMore ? 0.6 : 1,
                   }}
                   onMouseEnter={(e) => {
                     if (!loadingMore) {
-                      e.target.style.backgroundColor = 'var(--primary-purple)';
-                      e.target.style.color = 'white';
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.3)';
+                      e.currentTarget.style.borderColor = 'var(--primary-purple)';
+                      e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.04)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!loadingMore) {
-                      e.target.style.backgroundColor = 'white';
-                      e.target.style.color = 'var(--primary-purple)';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = 'none';
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                      e.currentTarget.style.backgroundColor = 'transparent';
                     }
                   }}
                 >
-                  {loadingMore ? (
-                    <span>⏳ Loading...</span>
-                  ) : (
-                    <span>📄 Load More Exams • Page {currentPage + 1} of {totalPages}</span>
-                  )}
+                  {loadingMore ? 'Loading...' : `Load more  ·  page ${currentPage + 1} of ${totalPages}`}
                 </button>
               </div>
             )}
 
-            {/* Pagination Info */}
+            {/* Footer count */}
             {exams.length > 0 && (
               <div style={{
-                textAlign: 'center',
-                marginTop: 'var(--spacing-md)',
+                padding: '0.625rem 1rem',
+                borderTop: exams.length > 0 && currentPage < totalPages ? 'none' : '1px solid var(--border-color)',
                 color: 'var(--text-secondary)',
-                fontSize: '0.875rem',
-                fontWeight: '500'
+                fontSize: '0.75rem',
+                textAlign: 'right',
               }}>
-                📊 Showing {exams.length} exams • Page {currentPage} of {totalPages}
+                Showing {exams.length} of {totalExams} exam{totalExams !== 1 ? 's' : ''}
               </div>
             )}
           </div>

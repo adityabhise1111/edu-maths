@@ -198,6 +198,11 @@
 }
 
 /* Custom Scrollbar for Sidebar */
+/**
+ * Scrollbar styling for webkit browsers (Chrome, Safari, Edge)
+ * Sets the width of the scrollbar track that appears on the dashboard sidebar
+ * to 6 pixels for a slim, modern appearance
+ */
 .dashboard-sidebar::-webkit-scrollbar {
     width: 6px;
 }

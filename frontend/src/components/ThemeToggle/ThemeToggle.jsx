@@ -1,5 +1,5 @@
 import { useTheme } from '../../contexts/ThemeContext';
-import { Flashlight, FlashlightOff } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import './ThemeToggle.css';
 
 const ThemeToggle = ({ className = '' }) => {
@@ -13,18 +13,18 @@ const ThemeToggle = ({ className = '' }) => {
             title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
         >
             {isDark ? (
-                // Flashlight icon for light mode (shown when in dark mode)
-                <Flashlight
+                // Sun icon — click to switch to light mode
+                <Sun
                     size={22}
                     strokeWidth={2}
-                    className="text-yellow-500 hover:scale-110 transition-transform duration-300"
+                    style={{ color: '#f59e0b' }}
                 />
             ) : (
-                // FlashlightOff icon for dark mode (shown when in light mode)
-                <FlashlightOff
+                // Moon icon — click to switch to dark mode
+                <Moon
                     size={22}
-                    strokeWidth={2}
-                    className="text-indigo-600 hover:scale-110 transition-transform duration-300"
+                    strokeWidth={1.5}
+                    style={{ color: '#6366f1' }}
                 />
             )}
         </button>

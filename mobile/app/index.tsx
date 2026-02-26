@@ -51,6 +51,7 @@ export default function AcademySelect() {
 
         setLoading(false);
     };
+    
 
     const handleContinue = () => {
         if (!academyDetails) {

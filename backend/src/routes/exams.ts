@@ -489,7 +489,7 @@ router.post('/:examId/start', authenticateStudent, async (req: Request, res: Res
         const examAnswerRows = randomQuestions.map(q => ({
             attemptId,
             questionId: q.id,
-            selectedOption: 0, // Placeholder - will be updated on submission
+            selectedOption: -1, // Placeholder for unanswered (-1 means no selection)
             isCorrect: false,  // Placeholder - will be updated on submission
         }));
 
@@ -730,11 +730,11 @@ router.post('/:examId/answer', authenticateStudent, async (req: Request, res: Re
             });
         }
 
-        // Validate selectedOption is a number
-        if (typeof selectedOption !== 'number' || selectedOption < 0) {
+        // Validate selectedOption is a number between 0-3 (valid option indices)
+        if (typeof selectedOption !== 'number' || selectedOption < 0 || selectedOption > 3) {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'selectedOption must be a non-negative number',
+                message: 'selectedOption must be between 0-3 (A, B, C, or D)',
             });
         }
 
@@ -883,10 +883,10 @@ router.post('/:examId/answers', authenticateStudent, async (req: Request, res: R
                 });
             }
 
-            if (typeof answer.selectedOption !== 'number' || answer.selectedOption < 0) {
+            if (typeof answer.selectedOption !== 'number' || answer.selectedOption < 0 || answer.selectedOption > 3) {
                 return res.status(400).json({
                     error: 'Validation Error',
-                    message: 'selectedOption must be a non-negative number',
+                    message: 'selectedOption must be between 0-3 (A, B, C, or D)',
                 });
             }
         }
