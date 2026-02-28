@@ -1,0 +1,54 @@
+﻿name: Build Android APK
+
+on:
+  push:
+    branches:
+      - githubactions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm install
+
+      - name: Create .env from GitHub Secrets
+        working-directory: mobile
+        run: |
+          echo "EXPO_PUBLIC_API_BASE_URL=${{ secrets.EXPO_PUBLIC_API_BASE_URL }}" >> .env
+          echo "EXPO_PUBLIC_API_TIMEOUT=${{ secrets.EXPO_PUBLIC_API_TIMEOUT }}" >> .env
+          echo "EXPO_PUBLIC_ENV=${{ secrets.EXPO_PUBLIC_ENV }}" >> .env
+
+      - name: Run Expo prebuild
+        working-directory: mobile
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Make gradlew executable
+        working-directory: mobile
+        run: chmod +x android/gradlew
+
+      - name: Build release APK
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
