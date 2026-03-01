@@ -233,5 +233,31 @@ export const teacherAPI = {
   getStudentExamDetails: (examId, studentId) => api.get(`/api/teacher/exams/${examId}/student/${studentId}`),
 };
 
+// ============================================
+// RESOURCES ENDPOINTS
+// ============================================
+
+export const resourcesAPI = {
+  // Upload a resource (file upload with FormData)
+  uploadResource: (formData) => 
+    api.post('/api/resources/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+
+  // Get all resources for an academy
+  getAcademyResources: (academyId, params = {}) => 
+    api.get(`/api/resources/academy/${academyId}`, { params }),
+
+  // Get single resource
+  getResource: (resourceId) => 
+    api.get(`/api/resources/${resourceId}`),
+
+  // Delete a resource
+  deleteResource: (resourceId) => 
+    api.delete(`/api/resources/${resourceId}`),
+};
+
 // Export the configured axios instance for custom requests
 export default api;

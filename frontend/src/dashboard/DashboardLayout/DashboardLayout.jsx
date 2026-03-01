@@ -11,7 +11,8 @@ import {
     LogOut,
     GraduationCap,
     UserRound,
-    Logs
+    Logs,
+    FolderOpen
 } from 'lucide-react';
 import './DashboardLayout.css';
 
@@ -62,6 +63,11 @@ const DashboardLayout = ({ children }) => {
             path: `/${academySlug}/dashboard/create-exam`,
             icon: FileText,
             label: 'Exams',
+        },
+        {
+            path: `/${academySlug}/resources`,
+            icon: FolderOpen,
+            label: 'Resources',
         },
         {
             path: `/${academySlug}/results`,

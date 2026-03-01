@@ -1,5 +1,5 @@
 import { pgTable, uuid, integer, boolean, uniqueIndex } from 'drizzle-orm/pg-core';
-import { examAttempts } from './examAttempts.js';
+import { examAttempts } from './examAttempts';
 
 export const examAnswers = pgTable('exam_answers', {
     id: uuid('id').primaryKey().defaultRandom(),
