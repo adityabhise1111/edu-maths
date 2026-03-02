@@ -16,6 +16,7 @@ import StudentPerformanceDetails from './dashboard/StudentPerformanceDetails.jsx
 import CreateExam from './dashboard/CreateExam.jsx';
 import CreateExamCalendar from './dashboard/CreateExamCalendar.jsx';
 import Resources from './dashboard/Resources.jsx';
+import StudentResources from './academy/AcademyStuff/StudentResources.jsx';
 import ExamPage from './exam/ExamPage.jsx';
 import NotFound from './common/NotFound/NotFound.jsx';
 import Footer from './common/Footer/Footer.jsx';
@@ -155,6 +156,16 @@ function App() {
             element={
               <ProtectedRoute type="teacher" requireAcademy validateSlug={true}>
                 <Resources />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Student resources - Protected student route */}
+          <Route
+            path="/:academySlug/student-resources"
+            element={
+              <ProtectedRoute type="student">
+                <StudentResources />
               </ProtectedRoute>
             }
           />

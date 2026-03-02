@@ -151,6 +151,9 @@ export const studentAPI = {
 
   // Get student performance
   getPerformance: () => api.get('/api/students/performance'),
+
+  // Get resources for student's academy
+  getResources: (params = {}) => api.get('/api/students/resources', { params }),
 };
 
 // ============================================

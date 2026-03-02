@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateTeacher, authenticateStudent } from '../middlewares/index.js';
 import { db } from '../db/index.js';
-import { students, academies, exams, examAttempts } from '../db/schema/index.js';
+import { students, academies, exams, examAttempts, resources } from '../db/schema/index.js';
 import { hashPassword, verifyPassword } from '../utils/password.js';
 import { signStudentToken } from '../utils/jwt.js';
 import { eq, and, desc } from 'drizzle-orm';
@@ -296,6 +296,73 @@ router.get('/performance', authenticateStudent, async (req: Request, res: Respon
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch performance data',
+        });
+    }
+});
+
+// ============================================
+// GET RESOURCES FOR STUDENT'S ACADEMY (Student Only)
+// ============================================
+router.get('/resources', authenticateStudent, async (req: Request, res: Response) => {
+    try {
+        const academyId = req.academyId!;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const offset = (page - 1) * limit;
+
+        // 1. Verify academy exists
+        const academy = await db
+            .select()
+            .from(academies)
+            .where(eq(academies.id, academyId))
+            .limit(1);
+
+        if (academy.length === 0) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Academy not found',
+            });
+        }
+
+        // 2. Get total count
+        const allResources = await db
+            .select()
+            .from(resources)
+            .where(eq(resources.academyId, academyId));
+
+        // 3. Get paginated resources
+        const paginatedResources = await db
+            .select()
+            .from(resources)
+            .where(eq(resources.academyId, academyId))
+            .orderBy(desc(resources.createdAt))
+            .limit(limit)
+            .offset(offset);
+
+        logger.info('Student fetched resources', {
+            academyId,
+            page,
+            totalResources: allResources.length,
+        });
+
+        return res.status(200).json({
+            academyId,
+            academyName: academy[0].name,
+            totalResources: allResources.length,
+            resources: paginatedResources,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(allResources.length / limit),
+                totalItems: allResources.length,
+                itemsPerPage: limit,
+            },
+        });
+
+    } catch (error: any) {
+        logger.error('Error fetching student resources', { error: error.message });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to fetch resources',
         });
     }
 });
