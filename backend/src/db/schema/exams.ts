@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, integer, timestamp, pgEnum } from 'drizzle-orm/pg-core';
-import { academies } from './academies';
+import { academies } from './academies.js';
 
 // Define difficulty enum
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard']);

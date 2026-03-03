@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default defineConfig({
-  schema: './src/db/schema/*.ts',
+  schema: './dist/db/schema/index.js',
   out: './src/db/migrations',
   dialect: 'postgresql',
   dbCredentials: {

@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
-import { academies } from './academies';
+import { academies } from './academies.js';
 
 export const students = pgTable('students', {
     id: uuid('id').primaryKey().defaultRandom(),
