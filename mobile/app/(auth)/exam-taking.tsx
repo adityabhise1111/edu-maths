@@ -277,6 +277,11 @@ export default function ExamTakingScreen() {
             setExamData(cachedData);
             setLoading(false);
 
+            // Initialize all questions to -1 (not selected)
+            const initialAnswers = new Map<string, number>();
+            cachedData.questions.forEach(q => initialAnswers.set(q.id, -1));
+            setAnswers(initialAnswers);
+
             const session = examSessionManager.getSession();
             const startTime = new Date(session!.startedAt).getTime();
             const duration = session!.durationMinutes * 60 * 1000;
@@ -299,6 +304,11 @@ export default function ExamTakingScreen() {
             if (response.success && response.data) {
                 setExamData(response.data);
                 dataCache.setQuestions(examId, response.data);
+
+                // Initialize all questions to -1 (not selected)
+                const initialAnswers = new Map<string, number>();
+                response.data.questions.forEach(q => initialAnswers.set(q.id, -1));
+                setAnswers(initialAnswers);
 
                 // Authority: startedAt + durationMinutes
                 const startTime = new Date(session!.startedAt).getTime();
@@ -390,7 +400,7 @@ export default function ExamTakingScreen() {
             let allSynced = true;
             for (const qId of Array.from(pendingSavesRef.current)) {
                 const optIndex = answers.get(qId);
-                if (optIndex === undefined) continue;
+                if (optIndex === undefined || optIndex === -1) continue;
 
                 try {
                     const res = await apiClient.post(`/exams/${examId}/answer`, {
