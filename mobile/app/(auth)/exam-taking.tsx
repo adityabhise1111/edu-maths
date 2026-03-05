@@ -147,6 +147,7 @@ export default function ExamTakingScreen() {
 
     const hasSubmittedRef = useRef(false);
     const answerDebounceRef = useRef<NodeJS.Timeout | null>(null);
+    const answersRef = useRef<Map<string, number>>(new Map());
     const navigation = useNavigation();
 
     const isConfirmedRef = useRef(false);
@@ -281,6 +282,7 @@ export default function ExamTakingScreen() {
             const initialAnswers = new Map<string, number>();
             cachedData.questions.forEach(q => initialAnswers.set(q.id, -1));
             setAnswers(initialAnswers);
+            answersRef.current = initialAnswers;
 
             const session = examSessionManager.getSession();
             const startTime = new Date(session!.startedAt).getTime();
@@ -309,6 +311,7 @@ export default function ExamTakingScreen() {
                 const initialAnswers = new Map<string, number>();
                 response.data.questions.forEach(q => initialAnswers.set(q.id, -1));
                 setAnswers(initialAnswers);
+                answersRef.current = initialAnswers;
 
                 // Authority: startedAt + durationMinutes
                 const startTime = new Date(session!.startedAt).getTime();
@@ -339,18 +342,72 @@ export default function ExamTakingScreen() {
     const [isOffline, setIsOffline] = useState(false);
     const pendingSavesRef = useRef<Set<string>>(new Set());
 
+    const isNetworkLikeSyncError = (errorType?: string): boolean => {
+        if (!errorType) return false;
+        return ['No Internet', 'Server Down', 'Network Error', 'Timeout'].includes(errorType);
+    };
+
+    const buildSelectedAnswersPayload = () => {
+        return Array.from(answersRef.current.entries())
+            .filter(([, selectedOption]) => selectedOption !== -1)
+            .map(([questionId, selectedOption]) => ({
+                questionId,
+                selectedOption,
+            }));
+    };
+
+    const syncAllAnswersBeforeSubmit = async (examId: string): Promise<boolean> => {
+        // Prevent queued debounce writes from racing final sync.
+        if (answerDebounceRef.current) {
+            clearTimeout(answerDebounceRef.current);
+            answerDebounceRef.current = null;
+        }
+
+        const answersPayload = buildSelectedAnswersPayload();
+        if (answersPayload.length === 0) return true;
+
+        setSyncStatus('syncing');
+
+        try {
+            const response = await apiClient.post(`/exams/${examId}/answers`, {
+                answers: answersPayload,
+            });
+
+            if (!response.success) {
+                if (isNetworkLikeSyncError(response.error?.error)) {
+                    setIsOffline(true);
+                }
+                setSyncStatus('failed');
+                return false;
+            }
+
+            setIsOffline(false);
+            pendingSavesRef.current.clear();
+            setSyncStatus('synced');
+            setTimeout(() => setSyncStatus(prev => prev === 'synced' ? 'none' : prev), 2000);
+            return true;
+        } catch (err) {
+            setIsOffline(true);
+            setSyncStatus('failed');
+            return false;
+        }
+    };
+
     const handleSelectOption = useCallback((optionIndex: number) => {
         if (!examData || submitting) return;
 
         const currentQuestion = examData.questions[currentQuestionIndex];
 
         // Update UI immediately (Local State)
-        const newAnswers = new Map(answers);
-        newAnswers.set(currentQuestion.id, optionIndex);
-        setAnswers(newAnswers);
+        setAnswers(prev => {
+            const newAnswers = new Map(prev);
+            newAnswers.set(currentQuestion.id, optionIndex);
+            answersRef.current = newAnswers;
+            return newAnswers;
+        });
 
         saveAnswer(currentQuestion.id, optionIndex);
-    }, [examData, currentQuestionIndex, answers, submitting]);
+    }, [examData, currentQuestionIndex, submitting]);
 
     const saveAnswer = async (questionId: string, optionIndex: number) => {
         if (answerDebounceRef.current) clearTimeout(answerDebounceRef.current);
@@ -370,7 +427,7 @@ export default function ExamTakingScreen() {
                     setSyncStatus('synced');
                     // Hide "Synced" status after 2 seconds
                     setTimeout(() => setSyncStatus(prev => prev === 'synced' ? 'none' : prev), 2000);
-                } else if (res.error?.error === 'Network Error' || res.error?.error === 'Timeout') {
+                } else if (isNetworkLikeSyncError(res.error?.error)) {
                     setIsOffline(true);
                     pendingSavesRef.current.add(questionId);
                     setSyncStatus('failed');
@@ -470,6 +527,25 @@ export default function ExamTakingScreen() {
         try {
             const session = examSessionManager.getSession();
             const currentExamId = session?.examId;
+
+            if (!currentExamId) {
+                Alert.alert('Unable to Submit', 'Exam session is missing. Please go back and retry.');
+                hasSubmittedRef.current = false;
+                setSubmitting(false);
+                return;
+            }
+
+            const bulkSyncSuccess = await syncAllAnswersBeforeSubmit(currentExamId);
+            if (!bulkSyncSuccess) {
+                Alert.alert(
+                    'Sync Failed',
+                    'We could not sync all selected answers. Please check your connection and try submit again.'
+                );
+                hasSubmittedRef.current = false;
+                setSubmitting(false);
+                return;
+            }
+
             const currentTitle = examData?.title || params.examTitle || 'Exam Result';
 
             const response = await apiClient.post<any>(`/exams/${currentExamId}/submit`, {
@@ -627,7 +703,9 @@ export default function ExamTakingScreen() {
                         ) : (
                             <>
                                 <ActivityIndicator size="large" color="#007AFF" />
-                                <Text style={styles.submittingText}>Submitting exam...</Text>
+                                <Text style={styles.submittingText}>
+                                    {syncStatus === 'syncing' ? 'Syncing all answers...' : 'Submitting exam...'}
+                                </Text>
                             </>
                         )}
                     </View>
