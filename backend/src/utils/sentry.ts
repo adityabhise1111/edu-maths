@@ -51,6 +51,11 @@ export function initializeSentry(): void {
     environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
     release: process.env.SENTRY_RELEASE,
     tracesSampleRate: getTracesSampleRate(),
+    // Registers HTTP and Express instrumentation so request spans and traces flow into Sentry.
+    integrations: [
+      Sentry.httpIntegration(),
+      Sentry.expressIntegration(),
+    ],
     // Drops expected 4xx-style operational errors to reduce monitoring noise.
     beforeSend(event, hint) {
       const original = hint.originalException as { status?: number; statusCode?: number } | undefined;

@@ -8,6 +8,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { cache } from '../utils/cache.js';
 import { logger } from '../utils/logger.js';
 import { getTeacherAcademyDashboardKey } from '../utils/redisKeys.js';
+import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
@@ -97,6 +98,7 @@ router.post('/create', authenticateTeacher, async (req: Request, res: Response) 
 
     } catch (error) {
         console.error('Error creating student:', error);
+        captureSentryException(error, { route: 'students - create student' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to create student',
@@ -182,6 +184,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Error logging in student:', error);
+        captureSentryException(error, { route: 'students - login' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to login',
@@ -239,6 +242,7 @@ router.get('/exam-attempts', authenticateStudent, async (req: Request, res: Resp
 
     } catch (error) {
         console.error('Error fetching exam attempts:', error);
+        captureSentryException(error, { route: 'students - get exam attempts' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch exam attempts',
@@ -293,6 +297,7 @@ router.get('/performance', authenticateStudent, async (req: Request, res: Respon
 
     } catch (error) {
         console.error('Error fetching student performance:', error);
+        captureSentryException(error, { route: 'students - get performance' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch performance data',

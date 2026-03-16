@@ -5,6 +5,7 @@ import { academies } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
 import { getRedisClient, isRedisAvailable } from '../db/redis.js';
 import { getAcademyPublicKey } from '../utils/redisKeys.js';
+import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
@@ -72,6 +73,7 @@ router.post('/create', authenticateTeacher, async (req: Request, res: Response) 
         console.log(`🗑️ Cache invalidated: ${redisKey}`);
       } catch (redisError) {
         console.error('Redis error (cache invalidation):', redisError);
+        captureSentryException(redisError, { route: 'academy - create (redis invalidation)' });
         // Don't fail the request if cache invalidation fails
       }
     }
@@ -82,6 +84,7 @@ router.post('/create', authenticateTeacher, async (req: Request, res: Response) 
     });
   } catch (error) {
     console.error('Error creating academy:', error);
+    captureSentryException(error, { route: 'academy - create academy' });
     return res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to create academy',
@@ -109,6 +112,7 @@ router.get('/:slug', async (req: Request, res: Response) => {
         console.log(`❌ Cache MISS: ${redisKey}`);
       } catch (redisError) {
         console.error('Redis error (cache check):', redisError);
+        captureSentryException(redisError, { route: 'academy - get by slug (redis check)' });
         // Continue to database if Redis fails
       }
     }
@@ -140,6 +144,7 @@ router.get('/:slug', async (req: Request, res: Response) => {
         console.log(`✅ Cached: ${redisKey} (TTL: 5 mins)`);
       } catch (redisError) {
         console.error('Redis error (cache set):', redisError);
+        captureSentryException(redisError, { route: 'academy - get by slug (redis set)' });
         // Don't fail the request if caching fails
       }
     }
@@ -149,6 +154,7 @@ router.get('/:slug', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching academy:', error);
+    captureSentryException(error, { route: 'academy - get by slug' });
     return res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to fetch academy',

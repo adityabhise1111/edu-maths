@@ -1,4 +1,9 @@
 import 'dotenv/config'; // Must be first!
+
+// Sentry must be initialized before all other imports so it can instrument modules via Node.js patching.
+import { initializeSentry, captureSentryException } from './utils/sentry.js';
+initializeSentry();
+
 import AgentAPI from 'apminsight';
 AgentAPI.config();
 
@@ -7,14 +12,8 @@ import { testConnection } from './db/index.js';
 import { getRedisClient } from './db/redis.js';
 import healthJob from './utils/cron.js';
 import "./utils/autoSubmitExams.js";
-import { initializeSentry, captureSentryException } from './utils/sentry.js';
-
-
 
 const PORT = process.env.PORT || 3000;
-
-// Initialize Sentry early in startup so runtime errors can be captured alongside existing observability.
-initializeSentry();
 
 app.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);

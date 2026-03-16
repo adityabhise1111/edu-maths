@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import { clerkMiddleware } from '@clerk/express';
 import authRoutes from './routes/auth.js';
@@ -48,6 +49,10 @@ app.use('/api/students', studentRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/resources', resourcesRoutes);
+
+// Required by @sentry/node v8+: must be placed after all routes and before any other error middleware.
+// This automatically captures Express errors and attaches request context to Sentry events.
+Sentry.setupExpressErrorHandler(app);
 
 // Final fallback error handler captures uncaught route errors and returns a stable JSON 500 response.
 app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {

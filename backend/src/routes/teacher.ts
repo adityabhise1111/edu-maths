@@ -6,6 +6,7 @@ import { eq, and, desc, asc, inArray, sql, count } from 'drizzle-orm';
 import { cache } from '../utils/cache.js';
 import { getTeacherAcademyExamsKey, getTeacherAcademyStudentsKey, getTeacherAcademyInfoKey, getTeacherExamSummaryKey, getTeacherExamAttemptsKey, getTeacherAcademyDashboardKey } from '../utils/redisKeys.js';
 import { logger } from '../utils/logger.js';
+import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
@@ -134,6 +135,7 @@ router.get('/exams/:examId/attempts', authenticateTeacher, async (req: Request, 
 
     } catch (error) {
         console.error('Error fetching exam attempts:', error);
+        captureSentryException(error, { route: 'teacher - get exam attempts' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch exam attempts',
@@ -251,6 +253,7 @@ router.get('/exams/:examId/summary', authenticateTeacher, async (req: Request, r
 
     } catch (error) {
         console.error('Error fetching exam summary:', error);
+        captureSentryException(error, { route: 'teacher - get exam summary' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch exam summary',
@@ -374,6 +377,7 @@ router.get('/students/:studentId/performance', authenticateTeacher, async (req: 
 
     } catch (error) {
         console.error('Error fetching student performance:', error);
+        captureSentryException(error, { route: 'teacher - get student performance' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch student performance',
@@ -515,6 +519,7 @@ router.get('/academy/exams', authenticateTeacher, async (req: Request, res: Resp
 
     } catch (error) {
         console.error('Error fetching academy exams:', error);
+        captureSentryException(error, { route: 'teacher - get academy exams' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch academy exams',
@@ -636,6 +641,7 @@ router.get('/academy/students', authenticateTeacher, async (req: Request, res: R
 
     } catch (error) {
         console.error('Error fetching academy students:', error);
+        captureSentryException(error, { route: 'teacher - get academy students' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch academy students',
@@ -787,6 +793,7 @@ router.get('/exams/:examId/student/:studentId', authenticateTeacher, async (req:
 
     } catch (error) {
         console.error('Error fetching student exam details:', error);
+        captureSentryException(error, { route: 'teacher - get student exam details' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch student exam details',
@@ -905,6 +912,7 @@ router.get('/academy/:academyId/students-performance', authenticateTeacher, asyn
 
     } catch (error) {
         console.error('Error fetching students performance:', error);
+        captureSentryException(error, { route: 'teacher - get students performance' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch students performance',
@@ -993,6 +1001,7 @@ router.delete('/students/:studentId', authenticateTeacher, async (req: Request, 
 
     } catch (error) {
         console.error('Error deleting student:', error);
+        captureSentryException(error, { route: 'teacher - delete student' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to delete student',
@@ -1114,6 +1123,7 @@ router.get('/academy/dashboard', authenticateTeacher, async (req: Request, res: 
 
     } catch (error) {
         console.error('Error fetching academy dashboard:', error);
+        captureSentryException(error, { route: 'teacher - get academy dashboard' });
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to fetch academy dashboard',
