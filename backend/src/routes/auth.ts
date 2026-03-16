@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticateTeacher } from '../middlewares/index.js';
+import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
@@ -111,6 +112,7 @@ router.post('/dev/get-clerk-token', async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('Error getting Clerk token:', error);
+    captureSentryException(error, { route: 'auth - get Clerk token' });
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to get token from Clerk',

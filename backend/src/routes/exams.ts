@@ -12,6 +12,7 @@ import { cache } from '../utils/cache.js';
 import { logger } from '../utils/logger.js';
 import { checkRateLimit, getRateLimitErrorMessage } from '../utils/rateLimit.js';
 import { checkSubmitIdempotency, storeSubmitIdempotency } from '../utils/idempotency.js';
+import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
@@ -107,6 +108,11 @@ router.post('/create', authenticateTeacher, async (req: Request, res: Response) 
                     patterns: [`teacher:academy:${academyId}:exams:*`, `teacher:academy:${academyId}:dashboard`],
                 });
             } catch (redisError) {
+                // Capture swallowed Redis cache errors as non-fatal events for backend observability.
+                captureSentryException(redisError, {
+                    area: 'exam.create.cacheInvalidation',
+                    academyId,
+                });
                 console.error('Redis error (cache invalidation):', redisError);
                 // Don't fail the request if cache invalidation fails
             }

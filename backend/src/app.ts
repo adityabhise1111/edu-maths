@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import * as Sentry from '@sentry/node';
 import cors from 'cors';
 import { clerkMiddleware } from '@clerk/express';
 import authRoutes from './routes/auth.js';
@@ -7,7 +8,9 @@ import studentRoutes from './routes/students.js';
 import examRoutes from './routes/exams.js';
 import teacherRoutes from './routes/teacher.js';
 import healthRoutes from './routes/health.js';
+import resourcesRoutes from './routes/resources.js';
 import { requestIdMiddleware } from './middlewares/requestId.js';
+import { sentryRequestContextMiddleware, sentryErrorHandler } from './utils/sentry.js';
 import { isRedisAvailable } from './db/redis.js';
 import { testConnection } from './db/index.js';
 
@@ -32,6 +35,9 @@ app.use(express.urlencoded({ extended: true }));
 // Request ID middleware for correlation
 app.use(requestIdMiddleware);
 
+// Sentry request-context middleware stores correlation/user metadata for later error captures.
+app.use(sentryRequestContextMiddleware);
+
 // Clerk middleware - handles JWT verification
 app.use(clerkMiddleware());
 
@@ -42,5 +48,15 @@ app.use('/api/academy', academyRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/teacher', teacherRoutes);
+app.use('/api/resources', resourcesRoutes);
+
+// Required by @sentry/node v8+: must be placed after all routes and before any other error middleware.
+// This automatically captures Express errors and attaches request context to Sentry events.
+Sentry.setupExpressErrorHandler(app);
+
+// Final fallback error handler captures uncaught route errors and returns a stable JSON 500 response.
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  sentryErrorHandler(err, req, res, next);
+});
 
 export default app;

@@ -1,10 +1,10 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useStudentAuth } from "../../contexts/StudentAuthContext";
 import { academyAPI, examAPI } from "../../services/api";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorAlert from "../../components/ErrorAlert";
-import { LogOut, AlertTriangle, Clipboard, History, FileText } from 'lucide-react';
+import { LogOut, AlertTriangle, Clipboard, History, FileText, FolderOpen } from 'lucide-react';
 import ThemeToggle from "../../components/ThemeToggle/ThemeToggle";
 
 const AcademyPage = () => {
@@ -133,25 +133,50 @@ const AcademyPage = () => {
           <ThemeToggle />
 
           {isAuthenticated && student && (
-            <button
-              onClick={handleLogout}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: '500',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
-              onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
-            >
-              <LogOut size={18} strokeWidth={2} className="inline-block mr-2" />
-              Logout
-            </button>
+            <>
+              <Link
+                to={`/${academySlug}/student-resources`}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'background 0.2s',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+              >
+                <FolderOpen size={18} strokeWidth={2} />
+                Resources
+              </Link>
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+              >
+                <LogOut size={18} strokeWidth={2} className="inline-block mr-2" />
+                Logout
+              </button>
+            </>
           )}
         </div>
 
