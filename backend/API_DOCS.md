@@ -43,6 +43,49 @@ Requires Bearer token in Authorization header.
 
 ---
 
+## POST /api/students/register
+
+Registers a Clerk-authenticated user as a student in DB.
+
+### Authentication
+Required: Yes (Clerk)
+
+### Request Body
+```json
+{
+  "academySlug": "string",
+  "username": "string"
+}
+```
+
+### Success Response (200)
+```json
+{
+  "success": true,
+  "student": {
+    "id": "uuid",
+    "username": "string",
+    "academyId": "uuid",
+    "status": "pending"
+  }
+}
+```
+
+### Error Responses
+- 401 Unauthorized
+- 403 Forbidden (non-student)
+- 400 Validation Error
+- 409 Username exists
+- 429 Rate limit
+
+### Important Notes
+- Backend NEVER assigns role
+- Role must already be "student"
+- Endpoint is idempotent
+- Username is globally unique
+
+---
+
 ## POST /api/academy/create
 
 Create a new academy for the authenticated teacher.

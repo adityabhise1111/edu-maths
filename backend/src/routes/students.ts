@@ -20,14 +20,41 @@ router.post('/register', async (req: Request, res: Response) => {
         if (!auth || !auth.userId) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Authentication required',
             });
         }
 
-        const forwardedFor = req.headers['x-forwarded-for'];
-        const ip = (Array.isArray(forwardedFor)
-            ? forwardedFor[0]
-            : forwardedFor?.split(',')[0]?.trim()) || req.socket.remoteAddress || 'unknown';
+        const { userId } = auth as { userId: string };
+
+        const clerkUser = await clerkClient.users.getUser(userId);
+
+        const role = (clerkUser.publicMetadata as Record<string, unknown> | undefined)?.role;
+        if (role !== 'student') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Only students can register',
+            });
+        }
+
+        const { academySlug, username } = req.body ?? {};
+        const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+
+        if (
+            typeof academySlug !== 'string'
+            || !academySlug
+            || typeof username !== 'string'
+            || !trimmedUsername
+            || !USERNAME_REGEX.test(trimmedUsername)
+        ) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Invalid input',
+            });
+        }
+
+        const ip =
+            req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim()
+            || req.socket.remoteAddress
+            || 'unknown';
 
         const rateLimit = await checkRegistrationRateLimit(ip);
         if (!rateLimit.allowed) {
@@ -37,137 +64,139 @@ router.post('/register', async (req: Request, res: Response) => {
             });
         }
 
-        const { academySlug, username } = req.body ?? {};
-        const clerkUserId: string = auth.userId;
-
-        if (!academySlug || !username) {
-            return res.status(400).json({
-                error: 'Validation Error',
-                message: 'academySlug and username are required',
-            });
-        }
-
-        if (!USERNAME_REGEX.test(username)) {
-            return res.status(400).json({
-                error: 'Validation Error',
-                message: 'Username must be 3-30 characters and contain only letters, numbers, dots, underscores, plus signs, or hyphens.',
-            });
-        }
-
-        const clerkUser = await clerkClient.users.getUser(clerkUserId);
-        const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
-            ?? clerkUser.emailAddresses[0];
-
-        if (!primaryEmail) {
-            return res.status(400).json({
-                error: 'Bad Request',
-                message: 'No email found for Clerk account.',
-            });
-        }
-
-        const normalizedEmail = primaryEmail.emailAddress.trim().toLowerCase();
-
         const academy = await db
-            .select()
+            .select({ id: academies.id })
             .from(academies)
             .where(eq(academies.slug, academySlug))
             .limit(1);
 
         if (academy.length === 0) {
-            return res.status(404).json({
-                error: 'Not Found',
-                message: 'Academy not found',
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Invalid input',
             });
         }
 
         const academyId = academy[0].id;
 
+        const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress;
+        const email = primaryEmail?.trim().toLowerCase();
+        const profilePicUrl = clerkUser.imageUrl || null;
+
+        if (!email) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Invalid input',
+            });
+        }
+
         const existingByClerkId = await db
-            .select({ id: students.id })
+            .select({
+                id: students.id,
+                username: students.username,
+                academyId: students.academyId,
+                status: students.status,
+            })
             .from(students)
-            .where(eq(students.clerkUserId, clerkUserId))
+            .where(eq(students.clerkUserId, userId))
             .limit(1);
 
         if (existingByClerkId.length > 0) {
             return res.status(200).json({
-                message: 'Registration already completed.',
+                success: true,
+                student: {
+                    id: existingByClerkId[0].id,
+                    username: existingByClerkId[0].username,
+                    academyId: existingByClerkId[0].academyId,
+                    status: existingByClerkId[0].status,
+                },
             });
         }
 
         const existingByUsername = await db
             .select({ id: students.id })
             .from(students)
-            .where(eq(students.username, username))
+            .where(eq(students.username, trimmedUsername))
             .limit(1);
 
         if (existingByUsername.length > 0) {
             return res.status(409).json({
                 error: 'Conflict',
-                code: 'USERNAME_TAKEN',
-                message: 'Username is already taken. Please choose a different one.',
+                message: 'Username already taken',
             });
         }
 
-        const existingByEmail = await db
-            .select({ id: students.id })
-            .from(students)
-            .where(eq(students.email, normalizedEmail))
-            .limit(1);
-
-        if (existingByEmail.length > 0) {
-            return res.status(409).json({
-                error: 'Conflict',
-                message: 'An account with this email already exists.',
-            });
-        }
+        let createdStudent: {
+            id: string;
+            username: string;
+            academyId: string;
+            status: 'pending' | 'approved' | 'suspended' | 'rejected';
+        };
 
         try {
-            await db.insert(students).values({
-                academyId,
-                username,
-                clerkUserId,
-                email: normalizedEmail,
-                profilePicUrl: clerkUser.imageUrl || null,
-                status: 'pending',
-            });
+            const inserted = await db
+                .insert(students)
+                .values({
+                    clerkUserId: userId,
+                    email,
+                    username: trimmedUsername,
+                    academyId,
+                    profilePicUrl,
+                    status: 'pending',
+                })
+                .returning({
+                    id: students.id,
+                    username: students.username,
+                    academyId: students.academyId,
+                    status: students.status,
+                });
+
+            createdStudent = inserted[0];
         } catch (dbError: any) {
             if (dbError?.code === '23505') {
-                const row = await db
-                    .select({ id: students.id })
+                const existingAfterConflict = await db
+                    .select({
+                        id: students.id,
+                        username: students.username,
+                        academyId: students.academyId,
+                        status: students.status,
+                    })
                     .from(students)
-                    .where(eq(students.clerkUserId, clerkUserId))
+                    .where(eq(students.clerkUserId, userId))
                     .limit(1);
 
-                if (row.length > 0) {
+                if (existingAfterConflict.length > 0) {
                     return res.status(200).json({
-                        message: 'Registration already completed.',
+                        success: true,
+                        student: {
+                            id: existingAfterConflict[0].id,
+                            username: existingAfterConflict[0].username,
+                            academyId: existingAfterConflict[0].academyId,
+                            status: existingAfterConflict[0].status,
+                        },
                     });
                 }
             }
             throw dbError;
         }
 
-        try {
-            const existingMetadata = clerkUser.publicMetadata || {};
-            await clerkClient.users.updateUser(clerkUserId, {
-                publicMetadata: {
-                    ...existingMetadata,
-                    role: 'student',
-                    academySlug,
-                    username,
-                },
-            });
-        } catch (metadataError: any) {
-            logger.error('Student registration metadata update failed', {
-                event: 'student_register_metadata_failed',
-                clerkUserId,
+        const existing = clerkUser.publicMetadata || {};
+        await clerkClient.users.updateUserMetadata(userId, {
+            publicMetadata: {
+                ...existing,
                 academySlug,
-                error: metadataError?.message,
-            });
-        }
+                username: trimmedUsername,
+            },
+        });
 
-        return res.status(201).json({
-            message: 'Registration submitted. Awaiting teacher approval.',
+        return res.status(200).json({
+            success: true,
+            student: {
+                id: createdStudent.id,
+                username: createdStudent.username,
+                academyId: createdStudent.academyId,
+                status: createdStudent.status,
+            },
         });
 
     } catch (error) {
