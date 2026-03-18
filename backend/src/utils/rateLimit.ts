@@ -13,6 +13,7 @@
  */
 
 import { getRedisClient, isRedisAvailable } from '../db/redis.js';
+import { Request } from 'express';
 
 interface RateLimitResult {
     allowed: boolean;
@@ -107,4 +108,73 @@ export function getRateLimitErrorMessage(action: 'answer' | 'submit', resetAt?: 
     const actionText = action === 'answer' ? 'submit answers' : 'submit exam';
     const resetTime = resetAt ? ` Try again after ${resetAt.toISOString()}` : '';
     return `Too many requests. You can only ${actionText} ${RATE_LIMITS[action].limit} times per minute.${resetTime}`;
+}
+
+interface RegistrationRateLimitResult {
+    allowed: boolean;
+    limit: number;
+    remaining: number;
+    resetAt?: Date;
+}
+
+const STUDENT_REGISTER_LIMIT = 10;
+const STUDENT_REGISTER_WINDOW_SECONDS = 900;
+
+export function getClientIp(req: Request): string {
+    const ip =
+        req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim()
+        || req.socket.remoteAddress
+        || 'unknown';
+
+    return ip;
+}
+
+export async function checkRegistrationRateLimit(ip: string): Promise<RegistrationRateLimitResult> {
+    const redis = getRedisClient();
+
+    // Fail-open: do not block registration if Redis is unavailable
+    if (!redis || !isRedisAvailable()) {
+        return {
+            allowed: true,
+            limit: STUDENT_REGISTER_LIMIT,
+            remaining: STUDENT_REGISTER_LIMIT,
+        };
+    }
+
+    const key = `ratelimit:student_register:${ip}`;
+
+    try {
+        const count = await redis.incr(key);
+
+        // Set TTL only on first hit to preserve the fixed 15-minute window
+        if (count === 1) {
+            await redis.expire(key, STUDENT_REGISTER_WINDOW_SECONDS);
+        }
+
+        const ttl = await redis.ttl(key);
+        const resetAt = ttl > 0 ? new Date(Date.now() + ttl * 1000) : undefined;
+
+        if (count > STUDENT_REGISTER_LIMIT) {
+            return {
+                allowed: false,
+                limit: STUDENT_REGISTER_LIMIT,
+                remaining: 0,
+                resetAt,
+            };
+        }
+
+        return {
+            allowed: true,
+            limit: STUDENT_REGISTER_LIMIT,
+            remaining: STUDENT_REGISTER_LIMIT - count,
+            resetAt,
+        };
+    } catch (error) {
+        // Fail-open on Redis errors
+        return {
+            allowed: true,
+            limit: STUDENT_REGISTER_LIMIT,
+            remaining: STUDENT_REGISTER_LIMIT,
+        };
+    }
 }

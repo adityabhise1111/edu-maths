@@ -16,6 +16,8 @@ import { testConnection } from './db/index.js';
 
 const app = express();
 
+app.set('trust proxy', true);
+
 if (!process.env.CLERK_SECRET_KEY) {
   console.error('❌ CLERK_SECRET_KEY is missing from environment variables');
 } else {

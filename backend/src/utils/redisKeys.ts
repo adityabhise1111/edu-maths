@@ -254,3 +254,17 @@ export const getStudentExamResultKey = (examId: string, studentId: string): stri
 export const getTeacherAcademyDashboardKey = (academyId: string): string => {
   return `teacher:academy:${academyId}:dashboard`;
 };
+
+/**
+ * Student status cache TTL (seconds)
+ */
+export const STUDENT_STATUS_CACHE_TTL = 300;
+
+/**
+ * Student auth status cache key
+ *
+ * Pattern: student:status:{clerkUserId}
+ */
+export const getStudentStatusKey = (clerkUserId: string): string => {
+  return `student:status:${clerkUserId}`;
+};

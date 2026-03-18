@@ -1,125 +1,72 @@
 import { Router, Request, Response } from 'express';
-import { authenticateTeacher, authenticateStudent } from '../middlewares/index.js';
+import { authenticateStudent } from '../middlewares/index.js';
 import { db } from '../db/index.js';
 import { students, academies, exams, examAttempts, resources } from '../db/schema/index.js';
-import { hashPassword, verifyPassword } from '../utils/password.js';
-import { signStudentToken } from '../utils/jwt.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { cache } from '../utils/cache.js';
 import { logger } from '../utils/logger.js';
-import { getTeacherAcademyDashboardKey } from '../utils/redisKeys.js';
+import { clerkClient } from '../utils/clerkClient.js';
+import { checkRegistrationRateLimit } from '../utils/rateLimit.js';
 import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
 
-// Create new student
-router.post('/create', authenticateTeacher, async (req: Request, res: Response) => {
+const USERNAME_REGEX = /^[a-zA-Z0-9._+-]{3,30}$/;
+
+router.post('/register', async (req: Request, res: Response) => {
     try {
-        const { academyId, username, password } = req.body;
-        const clerkUserId = req.clerkUserId!;
+        const auth = (req as any).auth?.();
 
-        // 1. Validate Input
-        if (!academyId || !username || !password) {
+        if (!auth || !auth.userId) {
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Authentication required',
+            });
+        }
+
+        const forwardedFor = req.headers['x-forwarded-for'];
+        const ip = (Array.isArray(forwardedFor)
+            ? forwardedFor[0]
+            : forwardedFor?.split(',')[0]?.trim()) || req.socket.remoteAddress || 'unknown';
+
+        const rateLimit = await checkRegistrationRateLimit(ip);
+        if (!rateLimit.allowed) {
+            return res.status(429).json({
+                error: 'Too Many Requests',
+                message: 'Too many registration attempts. Please try again later.',
+            });
+        }
+
+        const { academySlug, username } = req.body ?? {};
+        const clerkUserId: string = auth.userId;
+
+        if (!academySlug || !username) {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'academyId, username, and password are required',
+                message: 'academySlug and username are required',
             });
         }
 
-        if (password.length < 6) {
+        if (!USERNAME_REGEX.test(username)) {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'Password must be at least 6 characters long',
+                message: 'Username must be 3-30 characters and contain only letters, numbers, dots, underscores, plus signs, or hyphens.',
             });
         }
 
-        // 2. Validate Academy Ownership
-        // Check if the academy exists AND belongs to the authenticated teacher
-        const academy = await db
-            .select()
-            .from(academies)
-            .where(and(
-                eq(academies.id, academyId),
-                eq(academies.clerkUserId, clerkUserId)
-            ))
-            .limit(1);
+        const clerkUser = await clerkClient.users.getUser(clerkUserId);
+        const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
+            ?? clerkUser.emailAddresses[0];
 
-        if (academy.length === 0) {
-            return res.status(403).json({
-                error: 'Forbidden',
-                message: 'You are not authorized to add students to this academy (or it does not exist)',
-            });
-        }
-
-        // 3. Hash Password
-        const passwordHash = await hashPassword(password);
-
-        // 4. Create Student
-        // (Drizzle will throw error if username is not unique per academy constraint)
-        try {
-            const newStudent = await db
-                .insert(students)
-                .values({
-                    academyId,
-                    username,
-                    passwordHash,
-                })
-                .returning({
-                    id: students.id,
-                    username: students.username,
-                    academyId: students.academyId,
-                    createdAt: students.createdAt,
-                });
-
-            // Invalidate teacher academy students cache (all pagination combos)
-            await cache.delPattern(`teacher:academy:${academyId}:students:*`);
-            // Invalidate dashboard cache (student count changed)
-            await cache.del(getTeacherAcademyDashboardKey(academyId));
-            logger.info('Cache invalidated for teacher academy students and dashboard', {
-                academyId,
-                patterns: [`teacher:academy:${academyId}:students:*`, `teacher:academy:${academyId}:dashboard`],
-            });
-
-            return res.status(201).json({
-                message: 'Student created successfully',
-                student: newStudent[0],
-            });
-
-        } catch (dbError: any) {
-            // Handle unique constraint violation specifically
-            if (dbError.code === '23505') { // Postgres generic duplicate key error code
-                return res.status(409).json({
-                    error: 'Conflict',
-                    message: `Username '${username}' is already taken in this academy`,
-                });
-            }
-            throw dbError; // Re-throw other errors
-        }
-
-    } catch (error) {
-        console.error('Error creating student:', error);
-        captureSentryException(error, { route: 'students - create student' });
-        return res.status(500).json({
-            error: 'Internal Server Error',
-            message: 'Failed to create student',
-        });
-    }
-});
-
-// Student Login
-router.post('/login', async (req: Request, res: Response) => {
-    try {
-        const { academySlug, username, password } = req.body;
-
-        // 1. Validate Input
-        if (!academySlug || !username || !password) {
+        if (!primaryEmail) {
             return res.status(400).json({
-                error: 'Validation Error',
-                message: 'academySlug, username, and password are required',
+                error: 'Bad Request',
+                message: 'No email found for Clerk account.',
             });
         }
 
-        // 2. Find Academy by Slug
+        const normalizedEmail = primaryEmail.emailAddress.trim().toLowerCase();
+
         const academy = await db
             .select()
             .from(academies)
@@ -133,61 +80,227 @@ router.post('/login', async (req: Request, res: Response) => {
             });
         }
 
-        const targetAcademy = academy[0];
+        const academyId = academy[0].id;
 
-        // 3. Find Student in that Academy
-        const student = await db
-            .select()
+        const existingByClerkId = await db
+            .select({ id: students.id })
             .from(students)
-            .where(and(
-                eq(students.academyId, targetAcademy.id),
-                eq(students.username, username)
-            ))
+            .where(eq(students.clerkUserId, clerkUserId))
             .limit(1);
 
-        if (student.length === 0) {
-            return res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Invalid username or password',
+        if (existingByClerkId.length > 0) {
+            return res.status(200).json({
+                message: 'Registration already completed.',
             });
         }
 
-        const targetStudent = student[0];
+        const existingByUsername = await db
+            .select({ id: students.id })
+            .from(students)
+            .where(eq(students.username, username))
+            .limit(1);
 
-        // 4. Verify Password
-        const isValid = await verifyPassword(password, targetStudent.passwordHash);
-
-        if (!isValid) {
-            return res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Invalid username or password',
+        if (existingByUsername.length > 0) {
+            return res.status(409).json({
+                error: 'Conflict',
+                code: 'USERNAME_TAKEN',
+                message: 'Username is already taken. Please choose a different one.',
             });
         }
 
-        // 5. Generate Token
-        const token = signStudentToken({
-            studentId: targetStudent.id,
-            academyId: targetAcademy.id,
-        });
+        const existingByEmail = await db
+            .select({ id: students.id })
+            .from(students)
+            .where(eq(students.email, normalizedEmail))
+            .limit(1);
 
-        // 6. Return Response
-        return res.status(200).json({
-            message: 'Login successful',
-            token,
-            student: {
-                id: targetStudent.id,
-                username: targetStudent.username,
-                academyId: targetStudent.academyId,
-                academyName: targetAcademy.name,
-            },
+        if (existingByEmail.length > 0) {
+            return res.status(409).json({
+                error: 'Conflict',
+                message: 'An account with this email already exists.',
+            });
+        }
+
+        try {
+            await db.insert(students).values({
+                academyId,
+                username,
+                clerkUserId,
+                email: normalizedEmail,
+                profilePicUrl: clerkUser.imageUrl || null,
+                status: 'pending',
+            });
+        } catch (dbError: any) {
+            if (dbError?.code === '23505') {
+                const row = await db
+                    .select({ id: students.id })
+                    .from(students)
+                    .where(eq(students.clerkUserId, clerkUserId))
+                    .limit(1);
+
+                if (row.length > 0) {
+                    return res.status(200).json({
+                        message: 'Registration already completed.',
+                    });
+                }
+            }
+            throw dbError;
+        }
+
+        try {
+            const existingMetadata = clerkUser.publicMetadata || {};
+            await clerkClient.users.updateUser(clerkUserId, {
+                publicMetadata: {
+                    ...existingMetadata,
+                    role: 'student',
+                    academySlug,
+                    username,
+                },
+            });
+        } catch (metadataError: any) {
+            logger.error('Student registration metadata update failed', {
+                event: 'student_register_metadata_failed',
+                clerkUserId,
+                academySlug,
+                error: metadataError?.message,
+            });
+        }
+
+        return res.status(201).json({
+            message: 'Registration submitted. Awaiting teacher approval.',
         });
 
     } catch (error) {
-        console.error('Error logging in student:', error);
-        captureSentryException(error, { route: 'students - login' });
+        console.error('Error registering student:', error);
+        captureSentryException(error, { route: 'students - register' });
         return res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to login',
+            message: 'Failed to register',
+        });
+    }
+});
+
+router.get('/me', async (req: Request, res: Response) => {
+    try {
+        const auth = (req as any).auth?.();
+        if (!auth || !auth.userId) {
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Authentication required',
+            });
+        }
+
+        const clerkUserId: string = auth.userId;
+
+        const findStudent = async () =>
+            db.select({
+                id: students.id,
+                academyId: students.academyId,
+                username: students.username,
+                email: students.email,
+                profilePicUrl: students.profilePicUrl,
+                status: students.status,
+                statusNote: students.statusNote,
+            })
+                .from(students)
+                .where(eq(students.clerkUserId, clerkUserId))
+                .limit(1);
+
+        let studentRows = await findStudent();
+
+        if (studentRows.length === 0) {
+            const clerkUser = await clerkClient.users.getUser(clerkUserId);
+            const metadata = clerkUser.publicMetadata || {};
+            const academySlug = typeof metadata.academySlug === 'string' ? metadata.academySlug : undefined;
+            const username = typeof metadata.username === 'string' ? metadata.username : undefined;
+
+            if (!academySlug || !username) {
+                return res.status(400).json({
+                    error: 'Bad Request',
+                    message: 'Missing required metadata for account recovery.',
+                });
+            }
+
+            const academy = await db
+                .select({ id: academies.id })
+                .from(academies)
+                .where(eq(academies.slug, academySlug))
+                .limit(1);
+
+            if (academy.length === 0) {
+                return res.status(404).json({
+                    error: 'Not Found',
+                    message: 'Academy not found for account recovery.',
+                });
+            }
+
+            const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
+                ?? clerkUser.emailAddresses[0];
+            if (!primaryEmail) {
+                return res.status(400).json({
+                    error: 'Bad Request',
+                    message: 'No email found for Clerk account.',
+                });
+            }
+
+            const email = primaryEmail.emailAddress.trim().toLowerCase();
+
+            try {
+                await db.insert(students).values({
+                    academyId: academy[0].id,
+                    username,
+                    clerkUserId,
+                    email,
+                    profilePicUrl: clerkUser.imageUrl || null,
+                    status: 'pending',
+                });
+            } catch (insertError: any) {
+                if (insertError?.code !== '23505') {
+                    throw insertError;
+                }
+            }
+
+            studentRows = await findStudent();
+            if (studentRows.length === 0) {
+                return res.status(500).json({
+                    error: 'Internal Server Error',
+                    message: 'Failed to recover student account.',
+                });
+            }
+        }
+
+        const student = studentRows[0];
+
+        if (student.status !== 'approved') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                status: student.status,
+                message: student.statusNote || 'Your account is not approved yet.',
+            });
+        }
+
+        const academy = await db
+            .select({ slug: academies.slug, name: academies.name })
+            .from(academies)
+            .where(eq(academies.id, student.academyId))
+            .limit(1);
+
+        return res.status(200).json({
+            studentId: student.id,
+            academyId: student.academyId,
+            academySlug: academy[0]?.slug,
+            academyName: academy[0]?.name,
+            username: student.username,
+            email: student.email,
+            profilePicUrl: student.profilePicUrl,
+            status: student.status,
+        });
+    } catch (error) {
+        console.error('Error fetching current student:', error);
+        captureSentryException(error, { route: 'students - me' });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to fetch student profile',
         });
     }
 });
