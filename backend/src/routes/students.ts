@@ -238,114 +238,71 @@ router.get('/me', async (req: Request, res: Response) => {
         if (!auth || !auth.userId) {
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Authentication required',
             });
         }
 
         const clerkUserId: string = auth.userId;
+
+        const clerkUser = await clerkClient.users.getUser(clerkUserId);
+        const role = (clerkUser.publicMetadata as Record<string, unknown> | undefined)?.role;
+        if (role !== 'student') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: "User must have role 'student'",
+            });
+        }
 
         const findStudent = async () =>
             db.select({
                 id: students.id,
                 academyId: students.academyId,
                 username: students.username,
-                email: students.email,
-                profilePicUrl: students.profilePicUrl,
                 status: students.status,
-                statusNote: students.statusNote,
             })
                 .from(students)
                 .where(eq(students.clerkUserId, clerkUserId))
                 .limit(1);
 
-        let studentRows = await findStudent();
+        const studentRows = await findStudent();
 
         if (studentRows.length === 0) {
-            const clerkUser = await clerkClient.users.getUser(clerkUserId);
-            const metadata = clerkUser.publicMetadata || {};
-            const academySlug = typeof metadata.academySlug === 'string' ? metadata.academySlug : undefined;
-            const username = typeof metadata.username === 'string' ? metadata.username : undefined;
-
-            if (!academySlug || !username) {
-                return res.status(400).json({
-                    error: 'Bad Request',
-                    message: 'Missing required metadata for account recovery.',
-                });
-            }
-
-            const academy = await db
-                .select({ id: academies.id })
-                .from(academies)
-                .where(eq(academies.slug, academySlug))
-                .limit(1);
-
-            if (academy.length === 0) {
-                return res.status(404).json({
-                    error: 'Not Found',
-                    message: 'Academy not found for account recovery.',
-                });
-            }
-
-            const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)
-                ?? clerkUser.emailAddresses[0];
-            if (!primaryEmail) {
-                return res.status(400).json({
-                    error: 'Bad Request',
-                    message: 'No email found for Clerk account.',
-                });
-            }
-
-            const email = primaryEmail.emailAddress.trim().toLowerCase();
-
-            try {
-                await db.insert(students).values({
-                    academyId: academy[0].id,
-                    username,
-                    clerkUserId,
-                    email,
-                    profilePicUrl: clerkUser.imageUrl || null,
-                    status: 'pending',
-                });
-            } catch (insertError: any) {
-                if (insertError?.code !== '23505') {
-                    throw insertError;
-                }
-            }
-
-            studentRows = await findStudent();
-            if (studentRows.length === 0) {
-                return res.status(500).json({
-                    error: 'Internal Server Error',
-                    message: 'Failed to recover student account.',
-                });
-            }
+            return res.status(404).json({
+                error: 'Not Found',
+                code: 'ACCOUNT_NOT_FOUND',
+            });
         }
 
         const student = studentRows[0];
 
-        if (student.status !== 'approved') {
+        if (student.status === 'pending') {
             return res.status(403).json({
                 error: 'Forbidden',
-                status: student.status,
-                message: student.statusNote || 'Your account is not approved yet.',
+                code: 'PENDING_APPROVAL',
             });
         }
 
-        const academy = await db
-            .select({ slug: academies.slug, name: academies.name })
-            .from(academies)
-            .where(eq(academies.id, student.academyId))
-            .limit(1);
+        if (student.status === 'suspended') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                code: 'SUSPENDED',
+            });
+        }
+
+        if (student.status === 'rejected') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                code: 'REJECTED',
+            });
+        }
 
         return res.status(200).json({
-            studentId: student.id,
-            academyId: student.academyId,
-            academySlug: academy[0]?.slug,
-            academyName: academy[0]?.name,
-            username: student.username,
-            email: student.email,
-            profilePicUrl: student.profilePicUrl,
-            status: student.status,
+            success: true,
+            student: {
+                id: student.id,
+                username: student.username,
+                academyId: student.academyId,
+                status: student.status,
+            },
         });
     } catch (error) {
         console.error('Error fetching current student:', error);
