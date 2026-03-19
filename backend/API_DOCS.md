@@ -45,10 +45,12 @@ Requires Bearer token in Authorization header.
 
 ## POST /api/students/register
 
-Registers a Clerk-authenticated user as a student in DB.
+Registers a Clerk-authenticated user as a student in the database. Requires Clerk JWT token and valid student role in metadata.
 
 ### Authentication
-Required: Yes (Clerk)
+**Required: Yes (Clerk JWT)**
+- Include token in Authorization header: `Authorization: Bearer <CLERK_JWT_TOKEN>`
+- User must have role = "student" in Clerk publicMetadata
 
 ### Request Body
 ```json
@@ -58,7 +60,17 @@ Required: Yes (Clerk)
 }
 ```
 
-### Success Response (200)
+**Validation Rules:**
+- `academySlug`: Must exist in academies table, and must match user's Clerk metadata academySlug (if already set)
+- `username`: 
+  - Length: 3–30 characters
+  - Allowed chars: `[a-zA-Z0-9._+-]`
+  - Globally unique (cannot be taken by any student)
+  - Case-sensitive
+
+### Responses
+
+#### 201 Created — Success
 ```json
 {
   "success": true,
@@ -71,18 +83,75 @@ Required: Yes (Clerk)
 }
 ```
 
-### Error Responses
-- 401 Unauthorized
-- 403 Forbidden (non-student)
-- 400 Validation Error
-- 409 Username exists
-- 429 Rate limit
+#### 400 Bad Request — Validation Error
+```json
+{
+  "error": "Validation Error",
+  "message": "Invalid input"
+}
+```
+Triggers: Missing fields, invalid username format, academy not found, no email in Clerk account
+
+#### 401 Unauthorized
+```json
+{
+  "error": "Unauthorized"
+}
+```
+Triggers: No Clerk JWT provided or token invalid
+
+#### 403 Forbidden — Non-Student Role
+```json
+{
+  "error": "Forbidden",
+  "message": "User must have role 'student'"
+}
+```
+Triggers: User's Clerk metadata role ≠ "student"
+
+#### 403 Forbidden — Academy Mismatch
+```json
+{
+  "error": "Forbidden",
+  "message": "Academy mismatch: cannot register to a different academy"
+}
+```
+Triggers: User's Clerk metadata academySlug exists but differs from request academySlug
+
+#### 409 Conflict — Username Taken
+```json
+{
+  "error": "Conflict",
+  "code": "USERNAME_TAKEN",
+  "message": "Username already taken"
+}
+```
+Triggers: Username is already registered globally (another student owns it)
+
+#### 429 Too Many Requests — Rate Limited
+```json
+{
+  "error": "Too Many Requests",
+  "message": "Too many registration attempts. Please try again later."
+}
+```
+Triggers: >10 registration attempts from same IP within 15 minutes
 
 ### Important Notes
-- Backend NEVER assigns role
-- Role must already be "student"
-- Endpoint is idempotent
-- Username is globally unique
+
+- **Identity Source**: Backend ONLY uses Clerk JWT for authentication; request body identity is never trusted
+- **Role Assignment**: Backend NEVER assigns or modifies the "student" role; it must be pre-assigned via Clerk API (admin only)
+- **Idempotency**: If clerkUserId already has a student record, returns 201 with existing student (safe to retry)
+- **Metadata Safety**: 
+  - academySlug is stored in Clerk publicMetadata (merged, never overwrites other fields)
+  - username is stored in both DB and Clerk metadata for quick lookups
+  - If Clerk metadata update fails, request still succeeds (DB state is authoritative)
+- **Username Uniqueness**: 
+  - Globally unique across all academies
+  - Enforced by DB UNIQUE constraint
+  - Pre-check + race condition handling ensures deterministic 409 response
+- **Race Condition Safety**: Even if two concurrent requests pass pre-checks, second gets 409 USERNAME_TAKEN (not 500)
+- **Email Source**: Always fetched from Clerk primary email, normalized to lowercase
 
 ---
 

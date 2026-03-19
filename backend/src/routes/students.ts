@@ -31,11 +31,19 @@ router.post('/register', async (req: Request, res: Response) => {
         if (role !== 'student') {
             return res.status(403).json({
                 error: 'Forbidden',
-                message: 'Only students can register',
+                message: "User must have role 'student'",
             });
         }
 
+        const metaSlug = (clerkUser.publicMetadata as Record<string, unknown> | undefined)?.academySlug;
         const { academySlug, username } = req.body ?? {};
+        if (metaSlug && metaSlug !== academySlug) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Academy mismatch: cannot register to a different academy',
+            });
+        }
+
         const trimmedUsername = typeof username === 'string' ? username.trim() : '';
 
         if (
@@ -102,7 +110,7 @@ router.post('/register', async (req: Request, res: Response) => {
             .limit(1);
 
         if (existingByClerkId.length > 0) {
-            return res.status(200).json({
+            return res.status(201).json({
                 success: true,
                 student: {
                     id: existingByClerkId[0].id,
@@ -122,6 +130,7 @@ router.post('/register', async (req: Request, res: Response) => {
         if (existingByUsername.length > 0) {
             return res.status(409).json({
                 error: 'Conflict',
+                code: 'USERNAME_TAKEN',
                 message: 'Username already taken',
             });
         }
@@ -166,7 +175,7 @@ router.post('/register', async (req: Request, res: Response) => {
                     .limit(1);
 
                 if (existingAfterConflict.length > 0) {
-                    return res.status(200).json({
+                    return res.status(201).json({
                         success: true,
                         student: {
                             id: existingAfterConflict[0].id,
@@ -174,6 +183,20 @@ router.post('/register', async (req: Request, res: Response) => {
                             academyId: existingAfterConflict[0].academyId,
                             status: existingAfterConflict[0].status,
                         },
+                    });
+                }
+
+                const usernameTakenAfterConflict = await db
+                    .select({ id: students.id })
+                    .from(students)
+                    .where(eq(students.username, trimmedUsername))
+                    .limit(1);
+
+                if (usernameTakenAfterConflict.length > 0) {
+                    return res.status(409).json({
+                        error: 'Conflict',
+                        code: 'USERNAME_TAKEN',
+                        message: 'Username already taken',
                     });
                 }
             }
@@ -189,7 +212,7 @@ router.post('/register', async (req: Request, res: Response) => {
             },
         });
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
             student: {
                 id: createdStudent.id,
