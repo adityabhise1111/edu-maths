@@ -243,8 +243,7 @@ router.get('/me', async (req: Request, res: Response) => {
 
         const clerkUserId: string = auth.userId;
 
-        const clerkUser = await clerkClient.users.getUser(clerkUserId);
-        const role = (clerkUser.publicMetadata as Record<string, unknown> | undefined)?.role;
+        const role = (auth.sessionClaims as any)?.publicMetadata?.role;
         if (role !== 'student') {
             return res.status(403).json({
                 error: 'Forbidden',
@@ -274,24 +273,10 @@ router.get('/me', async (req: Request, res: Response) => {
 
         const student = studentRows[0];
 
-        if (student.status === 'pending') {
+        if (student.status !== 'approved') {
             return res.status(403).json({
                 error: 'Forbidden',
-                code: 'PENDING_APPROVAL',
-            });
-        }
-
-        if (student.status === 'suspended') {
-            return res.status(403).json({
-                error: 'Forbidden',
-                code: 'SUSPENDED',
-            });
-        }
-
-        if (student.status === 'rejected') {
-            return res.status(403).json({
-                error: 'Forbidden',
-                code: 'REJECTED',
+                code: student.status.toUpperCase(),
             });
         }
 
