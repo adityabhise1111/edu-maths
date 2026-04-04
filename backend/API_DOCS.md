@@ -145,13 +145,95 @@ Triggers: >10 registration attempts from same IP within 15 minutes
 - **Metadata Safety**: 
   - academySlug is stored in Clerk publicMetadata (merged, never overwrites other fields)
   - username is stored in both DB and Clerk metadata for quick lookups
-  - If Clerk metadata update fails, request still succeeds (DB state is authoritative)
+  - If Clerk metadata update fails, the endpoint currently returns 500 (student row may already be created)
 - **Username Uniqueness**: 
   - Globally unique across all academies
   - Enforced by DB UNIQUE constraint
   - Pre-check + race condition handling ensures deterministic 409 response
 - **Race Condition Safety**: Even if two concurrent requests pass pre-checks, second gets 409 USERNAME_TAKEN (not 500)
 - **Email Source**: Always fetched from Clerk primary email, normalized to lowercase
+
+---
+
+## GET /api/students/me
+
+Fetch current authenticated student's profile and approval status.
+
+### Authentication
+**Required: Yes (Clerk JWT)**
+- Include token in Authorization header: `Authorization: Bearer <CLERK_JWT_TOKEN>`
+- User must have role = "student" in Clerk session claims
+
+### Request Body
+No request body required.
+
+### Success Response (200)
+```json
+{
+  "success": true,
+  "student": {
+    "id": "uuid",
+    "username": "string",
+    "academyId": "uuid",
+    "status": "approved"
+  }
+}
+```
+
+### Error Responses
+
+#### 401 Unauthorized
+```json
+{
+  "error": "Unauthorized"
+}
+```
+Triggers: Missing Clerk JWT or invalid auth context
+
+#### 403 Forbidden — Non-Student Role
+```json
+{
+  "error": "Forbidden",
+  "message": "User must have role 'student'"
+}
+```
+Triggers: `sessionClaims.role` is not `student`
+
+#### 403 Forbidden — Student Not Approved
+```json
+{
+  "error": "Forbidden",
+  "code": "PENDING_APPROVAL"
+}
+```
+Triggers: Student exists but `status !== approved`
+
+Possible `code` values when not approved:
+- `PENDING_APPROVAL`
+- `SUSPENDED`
+- `REJECTED`
+
+#### 404 Not Found
+```json
+{
+  "error": "Not Found",
+  "code": "ACCOUNT_NOT_FOUND"
+}
+```
+Triggers: No student record found for current Clerk user
+
+#### 500 Internal Server Error
+```json
+{
+  "error": "Internal Server Error",
+  "message": "Failed to fetch student profile"
+}
+```
+
+### Notes
+- The endpoint looks up student by `clerkUserId` from auth token.
+- Only approved students can successfully access this endpoint.
+- Non-approved students are intentionally blocked with `403` and status-based code.
 
 ---
 

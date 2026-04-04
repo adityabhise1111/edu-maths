@@ -243,7 +243,7 @@ router.get('/me', async (req: Request, res: Response) => {
 
         const clerkUserId: string = auth.userId;
 
-        const role = (auth.sessionClaims as any)?.publicMetadata?.role;
+        const role = (auth.sessionClaims as any)?.role;
         if (role !== 'student') {
             return res.status(403).json({
                 error: 'Forbidden',
@@ -276,7 +276,7 @@ router.get('/me', async (req: Request, res: Response) => {
         if (student.status !== 'approved') {
             return res.status(403).json({
                 error: 'Forbidden',
-                code: student.status.toUpperCase(),
+                code: student.status === 'pending' ? 'PENDING_APPROVAL' : student.status.toUpperCase(),
             });
         }
 
