@@ -4,11 +4,29 @@ import { db } from '../db/index.js';
 import { exams, academies, examAttempts, students, examAnswers, questionsEasy, questionsMedium, questionsHard } from '../db/schema/index.js';
 import { eq, and, desc, asc, inArray, sql, count } from 'drizzle-orm';
 import { cache } from '../utils/cache.js';
-import { getTeacherAcademyExamsKey, getTeacherAcademyStudentsKey, getTeacherAcademyInfoKey, getTeacherExamSummaryKey, getTeacherExamAttemptsKey, getTeacherAcademyDashboardKey } from '../utils/redisKeys.js';
+import { getTeacherAcademyExamsKey, getTeacherAcademyStudentsKey, getTeacherAcademyInfoKey, getTeacherExamSummaryKey, getTeacherExamAttemptsKey, getTeacherAcademyDashboardKey, getStudentStatusKey } from '../utils/redisKeys.js';
 import { logger } from '../utils/logger.js';
 import { captureSentryException } from '../utils/sentry.js';
 
 const router = Router();
+
+type StudentStatusAction = 'approve' | 'reject' | 'suspend' | 'reinstate';
+type StudentStatus = 'pending' | 'approved' | 'suspended' | 'rejected';
+
+const ACTION_TO_STATUS: Record<StudentStatusAction, Exclude<StudentStatus, 'pending'>> = {
+    approve: 'approved',
+    reject: 'rejected',
+    suspend: 'suspended',
+    reinstate: 'approved',
+};
+
+const isValidStatusTransition = (currentStatus: StudentStatus, action: StudentStatusAction): boolean => {
+    if (action === 'approve') return currentStatus === 'pending';
+    if (action === 'reject') return currentStatus === 'pending';
+    if (action === 'suspend') return currentStatus === 'approved';
+    if (action === 'reinstate') return currentStatus === 'suspended';
+    return false;
+};
 
 // Get all attempts for a given exam
 router.get('/exams/:examId/attempts', authenticateTeacher, async (req: Request, res: Response) => {
@@ -1005,6 +1023,149 @@ router.delete('/students/:studentId', authenticateTeacher, async (req: Request, 
         return res.status(500).json({
             error: 'Internal Server Error',
             message: 'Failed to delete student',
+        });
+    }
+});
+
+// Manage student status transitions (approve, reject, suspend, reinstate)
+router.post('/students/:studentId/status', authenticateTeacher, async (req: Request, res: Response) => {
+    try {
+        const auth = (req as any).auth?.();
+
+        if (!auth || !auth.userId) {
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Authentication failed',
+            });
+        }
+
+        const teacherClerkId = auth.userId as string;
+        const role = auth?.sessionClaims?.metadata?.role
+            || auth?.sessionClaims?.publicMetadata?.role;
+
+        if (role !== 'teacher') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: "User must have role 'teacher'",
+            });
+        }
+
+        const { studentId } = req.params;
+        const { action, note } = req.body as { action?: string; note?: unknown };
+
+        if (!studentId) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'studentId is required',
+            });
+        }
+
+        const allowedActions: StudentStatusAction[] = ['approve', 'reject', 'suspend', 'reinstate'];
+        if (!action || !allowedActions.includes(action as StudentStatusAction)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid action',
+            });
+        }
+
+        if (note !== undefined && typeof note !== 'string') {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'note must be a string',
+            });
+        }
+
+        // Fetch student by route param id
+        const studentRows = await db
+            .select({
+                id: students.id,
+                status: students.status,
+                academyId: students.academyId,
+                clerkUserId: students.clerkUserId,
+            })
+            .from(students)
+            .where(eq(students.id, studentId))
+            .limit(1);
+
+        if (studentRows.length === 0) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Student not found',
+            });
+        }
+
+        const targetStudent = studentRows[0];
+
+        // Ownership check: teacher must belong to same academy as target student
+        const teacherAcademy = await db
+            .select({ id: academies.id })
+            .from(academies)
+            .where(and(
+                eq(academies.id, targetStudent.academyId),
+                eq(academies.clerkUserId, teacherClerkId),
+            ))
+            .limit(1);
+
+        if (teacherAcademy.length === 0) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'You are not authorized to update this student',
+            });
+        }
+
+        const requestedAction = action as StudentStatusAction;
+        const currentStatus = targetStudent.status as StudentStatus;
+
+        if (!isValidStatusTransition(currentStatus, requestedAction)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid transition',
+            });
+        }
+
+        const nextStatus = ACTION_TO_STATUS[requestedAction];
+        const updatePayload: {
+            status: Exclude<StudentStatus, 'pending'>;
+            statusUpdatedAt: Date;
+            statusNote?: string | null;
+        } = {
+            status: nextStatus,
+            statusUpdatedAt: new Date(),
+        };
+
+        if (note !== undefined) {
+            updatePayload.statusNote = note;
+        }
+
+        const updated = await db
+            .update(students)
+            .set(updatePayload)
+            .where(eq(students.id, studentId))
+            .returning({
+                id: students.id,
+                status: students.status,
+            });
+
+        // Best-effort invalidation for student status cache.
+        try {
+            await cache.del(getStudentStatusKey(targetStudent.clerkUserId));
+        } catch {
+            // fail-safe: status update must not fail because cache invalidation failed
+        }
+
+        return res.status(200).json({
+            success: true,
+            student: {
+                id: updated[0].id,
+                status: updated[0].status,
+            },
+        });
+    } catch (error) {
+        console.error('Error updating student status:', error);
+        captureSentryException(error, { route: 'teacher - update student status' });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to update student status',
         });
     }
 });
