@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
 
-import { verifyStudentToken } from '../utils/jwt.js';
 import { db } from '../db/index.js';
 import { students } from '../db/schema/index.js';
 import { eq } from 'drizzle-orm';
@@ -38,56 +37,26 @@ export const authenticateTeacher = (req: Request, res: Response, next: NextFunct
 };
 
 export const authenticateStudent = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Missing or invalid Authorization header',
-    });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const payload = verifyStudentToken(token);
-    req.studentId = payload.studentId;
-    req.academyId = payload.academyId;
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      error: 'Unauthorized',
-      message: 'Invalid or expired token',
-    });
-  }
-};
-
-/**
- * New Clerk-based student authentication middleware (not attached yet).
- * Uses Clerk identity and role claims instead of legacy JWT payload.
- */
-export const authenticateStudentClerk = (req: Request, res: Response, next: NextFunction) => {
   const auth = (req as any).auth?.();
 
   if (!auth || !auth.userId) {
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'Authentication required',
     });
   }
 
-  const role = auth.sessionClaims?.metadata?.role
-    ?? auth.sessionClaims?.publicMetadata?.role;
+  const role = auth?.sessionClaims?.metadata?.role
+    || auth?.sessionClaims?.publicMetadata?.role;
 
-  if (role !== 'student') {
+  if (!role || role !== 'student') {
     return res.status(403).json({
       error: 'Forbidden',
-      message: 'Not a student account',
+      message: "User must have role 'student'",
     });
   }
 
   req.studentClerkId = auth.userId;
-  next();
+  return next();
 };
 
 /**

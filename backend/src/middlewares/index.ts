@@ -1,7 +1,6 @@
 export {
 	authenticateTeacher,
 	authenticateStudent,
-	authenticateStudentClerk,
 	checkStudentStatus,
 	requireAcademyAccess,
 } from './auth.js';
