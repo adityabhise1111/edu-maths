@@ -20,6 +20,10 @@ const ACTION_TO_STATUS: Record<StudentStatusAction, Exclude<StudentStatus, 'pend
     reinstate: 'approved',
 };
 
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isValidUUID = (value: string): boolean => UUID_V4_REGEX.test(value);
+
 const isValidStatusTransition = (currentStatus: StudentStatus, action: StudentStatusAction): boolean => {
     if (action === 'approve') return currentStatus === 'pending';
     if (action === 'reject') return currentStatus === 'pending';
@@ -1030,28 +1034,10 @@ router.delete('/students/:studentId', authenticateTeacher, async (req: Request, 
 // Manage student status transitions (approve, reject, suspend, reinstate)
 router.post('/students/:studentId/status', authenticateTeacher, async (req: Request, res: Response) => {
     try {
-        const auth = (req as any).auth?.();
-
-        if (!auth || !auth.userId) {
-            return res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Authentication failed',
-            });
-        }
-
-        const teacherClerkId = auth.userId as string;
-        const role = auth?.sessionClaims?.metadata?.role
-            || auth?.sessionClaims?.publicMetadata?.role;
-
-        if (role !== 'teacher') {
-            return res.status(403).json({
-                error: 'Forbidden',
-                message: "User must have role 'teacher'",
-            });
-        }
+        const teacherClerkId = req.clerkUserId!;
 
         const { studentId } = req.params;
-        const { action, note } = req.body as { action?: string; note?: unknown };
+        const { action, note } = req.body as { action?: StudentStatusAction; note?: unknown };
 
         if (!studentId) {
             return res.status(400).json({
@@ -1060,8 +1046,15 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
             });
         }
 
+        if (!isValidUUID(studentId)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid studentId format',
+            });
+        }
+
         const allowedActions: StudentStatusAction[] = ['approve', 'reject', 'suspend', 'reinstate'];
-        if (!action || !allowedActions.includes(action as StudentStatusAction)) {
+        if (!action || !allowedActions.includes(action)) {
             return res.status(400).json({
                 error: 'Bad Request',
                 message: 'Invalid action',
@@ -1072,6 +1065,14 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
             return res.status(400).json({
                 error: 'Bad Request',
                 message: 'note must be a string',
+            });
+        }
+
+        const requiresNote = action === 'reject' || action === 'suspend';
+        if (requiresNote && (typeof note !== 'string' || note.trim().length === 0)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Note required',
             });
         }
 
@@ -1113,7 +1114,7 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
             });
         }
 
-        const requestedAction = action as StudentStatusAction;
+        const requestedAction = action;
         const currentStatus = targetStudent.status as StudentStatus;
 
         if (!isValidStatusTransition(currentStatus, requestedAction)) {
@@ -1124,6 +1125,15 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
         }
 
         const nextStatus = ACTION_TO_STATUS[requestedAction];
+        logger.info('Teacher student status transition requested', {
+            requestId: req.requestId,
+            teacherClerkId,
+            studentId,
+            fromStatus: currentStatus,
+            toStatus: nextStatus,
+            action: requestedAction,
+        });
+
         const updatePayload: {
             status: Exclude<StudentStatus, 'pending'>;
             statusUpdatedAt: Date;
@@ -1134,7 +1144,11 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
         };
 
         if (note !== undefined) {
-            updatePayload.statusNote = note;
+            updatePayload.statusNote = note?.trim();
+        }
+
+        if (requestedAction === 'approve' || requestedAction === 'reinstate') {
+            updatePayload.statusNote = null;
         }
 
         const updated = await db
@@ -1145,6 +1159,18 @@ router.post('/students/:studentId/status', authenticateTeacher, async (req: Requ
                 id: students.id,
                 status: students.status,
             });
+
+        if (!updated || updated.length === 0) {
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'Update failed',
+            });
+        }
+
+        logger.info('Student status updated', {
+            studentId,
+            newStatus: updated[0].status,
+        });
 
         // Best-effort invalidation for student status cache.
         try {

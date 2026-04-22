@@ -1961,3 +1961,161 @@ No request body required.
 - Track student registration timeline
 
 ---
+
+## POST /api/teacher/students/:studentId/status
+
+Update a student's approval lifecycle status (approve, reject, suspend, reinstate).
+
+### Authentication
+Requires Clerk teacher JWT token in Authorization header.
+
+### URL Parameters
+- `studentId` (string, UUID) - The unique ID of the student
+
+### Request Body
+```json
+{
+  "action": "approve",
+  "note": "Optional status note"
+}
+```
+
+### Request Body Rules
+- `action` is required and must be one of:
+  - `approve`
+  - `reject`
+  - `suspend`
+  - `reinstate`
+- `note` is optional, but must be a string when provided.
+- `note` is required for:
+  - `reject`
+  - `suspend`
+- `note` is trimmed before saving.
+- For `approve` and `reinstate`, note is cleared (`null`) on update.
+
+### Allowed Status Transitions
+- `pending -> approve`
+- `pending -> reject`
+- `approved -> suspend`
+- `suspended -> reinstate`
+
+Any other transition is rejected.
+
+### Success Response (200)
+```json
+{
+  "success": true,
+  "student": {
+    "id": "uuid",
+    "status": "approved"
+  }
+}
+```
+
+### Error Responses
+
+#### 400 - Bad Request (Missing/Invalid studentId)
+```json
+{
+  "error": "Bad Request",
+  "message": "studentId is required"
+}
+```
+or
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid studentId format"
+}
+```
+
+#### 400 - Bad Request (Invalid action)
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid action"
+}
+```
+
+#### 400 - Bad Request (Invalid note)
+```json
+{
+  "error": "Bad Request",
+  "message": "note must be a string"
+}
+```
+or
+```json
+{
+  "error": "Bad Request",
+  "message": "Note required"
+}
+```
+
+#### 400 - Bad Request (Invalid transition)
+```json
+{
+  "error": "Bad Request",
+  "message": "Invalid transition"
+}
+```
+
+#### 401 - Unauthorized
+```json
+{
+  "error": "Unauthorized",
+  "message": "Authentication failed"
+}
+```
+
+#### 403 - Forbidden
+```json
+{
+  "error": "Forbidden",
+  "message": "User must have role 'teacher'"
+}
+```
+or
+```json
+{
+  "error": "Forbidden",
+  "message": "You are not authorized to update this student"
+}
+```
+
+#### 404 - Not Found
+```json
+{
+  "error": "Not Found",
+  "message": "Student not found"
+}
+```
+
+#### 500 - Internal Server Error
+```json
+{
+  "error": "Internal Server Error",
+  "message": "Update failed"
+}
+```
+or
+```json
+{
+  "error": "Internal Server Error",
+  "message": "Failed to update student status"
+}
+```
+
+### Business Rules
+- ✅ Teacher must be authenticated and have role `teacher`
+- ✅ Teacher can update only students in their own academy
+- ✅ Student ID must be a valid UUID format
+- ✅ Status transitions are strictly enforced
+- ✅ Reject/suspend actions require a note
+- ✅ Student status cache is invalidated after successful update (best effort)
+
+### Notes
+- This endpoint is DB-first and uses ownership checks before update.
+- Transition and update operations are logged for audit/traceability.
+
+---

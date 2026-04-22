@@ -22,13 +22,25 @@ declare global {
 // Custom middleware wrapper that extracts userId from Clerk auth
 export const authenticateTeacher = (req: Request, res: Response, next: NextFunction) => {
   // clerkMiddleware() in app.ts must run before this
-  const auth = (req as any).auth();
+  const auth = (req as any).auth?.();
 
   // Check if auth exists and has a userId
   if (!auth || !auth.userId) {
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Authentication failed',
+    });
+  }
+
+  const role =
+    auth.sessionClaims?.role
+    ?? auth.sessionClaims?.metadata?.role
+    ?? auth.sessionClaims?.publicMetadata?.role;
+
+  if (role !== 'teacher') {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: "User must have role 'teacher'",
     });
   }
 
@@ -45,8 +57,10 @@ export const authenticateStudent = (req: Request, res: Response, next: NextFunct
     });
   }
 
-  const role = auth?.sessionClaims?.metadata?.role
-    || auth?.sessionClaims?.publicMetadata?.role;
+  const role =
+    auth.sessionClaims?.role
+    ?? auth.sessionClaims?.metadata?.role
+    ?? auth.sessionClaims?.publicMetadata?.role;
 
   if (!role || role !== 'student') {
     return res.status(403).json({
