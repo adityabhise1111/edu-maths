@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, integer, timestamp, pgEnum } from 'drizzle-orm/pg-core';
-import { academies } from './academies';
+import { academies } from './academies.js';
 
 // Define file type enum
 export const fileTypeEnum = pgEnum('file_type', ['pdf', 'image', 'document']);
